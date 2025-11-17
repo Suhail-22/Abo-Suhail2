@@ -1,3 +1,4 @@
+// SettingsPanel.tsx
 import React from 'react';
 import { TaxSettings } from '../types';
 
@@ -25,10 +26,10 @@ interface SettingsPanelProps {
   onOpenSupport: () => void;
   onShowAbout: () => void;
   onCheckForUpdates: () => void;
-  // --- إضافة props للدوران ---
+  // --- إضافة props جديدة لقفل الدوران ---
   autoRotate: boolean;
-  onAutoRotateToggle: () => void;
-  // ---
+  setAutoRotate: (value: boolean) => void;
+  // --- النهاية ---
 }
 
 const convertArabicNumerals = (str: string | number): string => {
@@ -38,7 +39,7 @@ const convertArabicNumerals = (str: string | number): string => {
         .replace(/[۰۱۲۳۴۵۶۷۸۹]/g, d => String.fromCharCode(d.charCodeAt(0) - 1776));
 };
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, settings, theme, onThemeChange, fontFamily, setFontFamily, fontScale, setFontScale, buttonTextColor, setButtonTextColor, onOpenSupport, onShowAbout, onCheckForUpdates, autoRotate, onAutoRotateToggle }) => { // --- تضمين props الجديدة ---
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, settings, theme, onThemeChange, fontFamily, setFontFamily, fontScale, setFontScale, buttonTextColor, setButtonTextColor, onOpenSupport, onShowAbout, onCheckForUpdates, autoRotate, setAutoRotate }) => {
   const { vibrationEnabled, setVibrationEnabled, soundEnabled, setSoundEnabled, taxSettings, setTaxSettings, maxHistory, setMaxHistory } = settings;
   
   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -63,15 +64,22 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, settings
         <h3 className="text-[var(--accent-color)] text-2xl font-bold">⚙️ الإعدادات</h3>
         <button onClick={onClose} className="text-2xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">✕</button>
       </div>
-      {/* --- إضافة قسم جديد للدوران --- */}
+      {/* --- إضافة قسم قفل الدوران --- */}
       <div className="mb-6">
         <h4 className="text-lg font-semibold text-[var(--text-secondary)] mb-3">📱 الشاشة</h4>
         <label className="flex items-center justify-between text-[var(--text-secondary)] mb-4">
-          <span>السماح بدوران الشاشة</span>
-          <input type="checkbox" checked={autoRotate} onChange={onAutoRotateToggle} className="w-5 h-5 accent-[var(--accent-color)]" />
+          <span>قفل دوران الشاشة:</span>
+          <input
+            type="checkbox"
+            checked={!autoRotate} // تحقق تعني *قفل* (عكس autoRotate)
+            onChange={() => setAutoRotate(!autoRotate)} // تبديل الحالة
+            className="w-5 h-5 accent-[var(--accent-color)]"
+          />
+          <span className="text-xs text-[var(--text-secondary)] ml-2">({autoRotate ? 'مسموح' : 'مغلق'})</span>
         </label>
       </div>
-      {/* --- */}
+      <hr className="border-[var(--border-secondary)] my-4" />
+      {/* --- النهاية --- */}
       <div className="mb-6">
         <h4 className="text-lg font-semibold text-[var(--text-secondary)] mb-3">🎨 المظهر</h4>
         <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-[var(--bg-inset)]">
