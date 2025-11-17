@@ -7,7 +7,6 @@ interface HeaderProps {
   onToggleSettings: () => void;
   onShare: () => void;
   onToggleHistory: () => void;
-  historyCount: number;
   entryCountDisplay: number;
   dailyCount: number;
 }
@@ -28,8 +27,27 @@ const getTaxModeLabel = (taxSettings: TaxSettings): string => {
   }
 };
 
-const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare, onToggleHistory, historyCount, entryCountDisplay, dailyCount }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  taxSettings, 
+  onToggleSettings, 
+  onShare, 
+  onToggleHistory, 
+  entryCountDisplay, 
+  dailyCount 
+}) => {
   const taxLabel = getTaxModeLabel(taxSettings);
+
+  // --- دالة لإنشاء عنصر رمز مع عدد ---
+  const IconWithBadge = ({ icon, count }: { icon: string; count: number }) => (
+    <div className="relative inline-flex">
+      <span className="text-lg">{icon}</span>
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[0.6rem] rounded-full h-4 w-4 flex items-center justify-center shadow-md animate-fade-in-down">
+          {count}
+        </span>
+      )}
+    </div>
+  );
 
   return (
     <div className="flex flex-col w-full">
@@ -42,9 +60,39 @@ const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare,
         </div>
       )}
 
-      {/* --- شريط الأزرار --- */}
+      {/* --- شريط الأزرار (الترتيب النهائي) --- */}
       <div className="flex justify-between items-center px-1">
-        <div className="flex gap-2">
+        
+        {/* --- الجانب الأيسر: مشاركة ← الإدخالات --- */}
+        <div className="flex items-center gap-3">
+          {/* --- زر المشاركة --- */}
+          <button
+            onClick={onShare}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
+            aria-label="مشاركة"
+          >
+            📤
+          </button>
+
+          {/* --- الإدخالات --- */}
+          <IconWithBadge icon="🔢" count={entryCountDisplay} />
+        </div>
+
+        {/* --- الجانب الأيمن: السجل ← الإعدادات --- */}
+        <div className="flex items-center gap-2">
+          
+          {/* --- السجل مع العدد --- */}
+          <div className="relative">
+            <button
+              onClick={onToggleHistory}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
+              aria-label="فتح السجل"
+            >
+              <IconWithBadge icon="📜" count={dailyCount} />
+            </button>
+          </div>
+
+          {/* --- الإعدادات --- */}
           <button
             onClick={onToggleSettings}
             className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
@@ -52,36 +100,6 @@ const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare,
           >
             ⚙️
           </button>
-          <button
-            onClick={onShare}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-            aria-label="مشاركة"
-          >
-            ↗️
-          </button>
-        </div>
-        <div className="flex flex-col items-center">
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-[var(--text-secondary)]">السجل</span>
-            <span className="relative">
-              <button
-                onClick={onToggleHistory}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-                aria-label="فتح السجل"
-              >
-                📜
-              </button>
-              {dailyCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[0.6rem] rounded-full h-4 w-4 flex items-center justify-center">
-                  {dailyCount}
-                </span>
-              )}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-[var(--text-secondary)]">({historyCount})</span>
-            <span className="text-xs text-[var(--text-secondary)]">({entryCountDisplay})</span>
-          </div>
         </div>
       </div>
     </div>
