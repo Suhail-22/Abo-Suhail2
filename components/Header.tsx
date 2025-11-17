@@ -1,4 +1,4 @@
-// components/Header.tsx
+// Header.tsx
 import React from 'react';
 import { TaxSettings } from '../types';
 
@@ -60,25 +60,25 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      {/* --- شريط الأزرار (الترتيب النهائي) --- */}
+      {/* --- شريط الأزرار (الترتيب النهائي بعد التبديل) --- */}
       <div className="flex justify-between items-center px-1">
         
-        {/* --- الجانب الأيسر: مشاركة ← الإدخالات --- */}
+        {/* --- الجانب الأيسر: الإعدادات ← الإدخالات --- */}
         <div className="flex items-center gap-3">
-          {/* --- زر المشاركة --- */}
+          {/* --- زر الإعدادات --- */}
           <button
-            onClick={onShare}
+            onClick={onToggleSettings}
             className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-            aria-label="مشاركة"
+            aria-label="الإعدادات"
           >
-            📤
+            ⚙️
           </button>
 
           {/* --- الإدخالات --- */}
           <IconWithBadge icon="🔢" count={entryCountDisplay} />
         </div>
 
-        {/* --- الجانب الأيمن: السجل ← الإعدادات --- */}
+        {/* --- الجانب الأيمن: السجل ← المشاركة --- */}
         <div className="flex items-center gap-2">
           
           {/* --- السجل مع العدد --- */}
@@ -92,13 +92,13 @@ const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* --- الإعدادات --- */}
+          {/* --- زر المشاركة --- */}
           <button
-            onClick={onToggleSettings}
+            onClick={onShare}
             className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-            aria-label="الإعدادات"
+            aria-label="مشاركة"
           >
-            ⚙️
+            📤
           </button>
         </div>
       </div>
