@@ -33,6 +33,9 @@ function App() {
   const [fontFamily, setFontFamily] = useLocalStorage<string>('calcFontFamily_v2', 'Tajawal');
   const [fontScale, setFontScale] = useLocalStorage<number>('calcFontScale_v2', 1);
   const [buttonTextColor, setButtonTextColor] = useLocalStorage<string | null>('calcButtonTextColor_v1', null);
+  // --- إضافة إعداد الدوران ---
+  const [autoRotate, setAutoRotate] = useLocalStorage<boolean>('autoRotate', true); // القيمة الافتراضية: السماح بالدوران
+  // ---
 
   const showNotification = useCallback((message: string) => {
     setNotification({ message, show: true });
@@ -57,6 +60,47 @@ function App() {
     }
   }, [calculator.actions]);
   
+  // --- إضافة useEffect للتحكم في دوران الشاشة ---
+  useEffect(() => {
+    let handleOrientationChange: (() => void) | undefined;
+
+    const lockToPortrait = () => {
+      // @ts-ignore
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait').catch(e => console.log('فشل في قفل الاتجاه:', e));
+      }
+    };
+
+    const unlockOrientation = () => {
+      // @ts-ignore
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
+    };
+
+    if (autoRotate) {
+      unlockOrientation();
+    } else {
+      lockToPortrait();
+      handleOrientationChange = () => {
+        if (screen.orientation && Math.abs(screen.orientation.angle) % 180 !== 0) {
+          lockToPortrait();
+        }
+      };
+      window.addEventListener('orientationchange', handleOrientationChange);
+    }
+
+    return () => {
+      if (handleOrientationChange) {
+        window.removeEventListener('orientationchange', handleOrientationChange);
+      }
+      if (autoRotate) {
+         unlockOrientation();
+      }
+    };
+  }, [autoRotate]);
+  // ---
+
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
@@ -162,9 +206,6 @@ function App() {
 
   const onCheckForUpdates = useCallback(() => {
     appUpdate.registration?.update().then(() => {
-      // After update(), the state of installing/waiting might not be immediately available.
-      // The 'updatefound' event listener is the more reliable way to detect updates.
-      // For immediate feedback, we can check, but it might not catch the very latest state.
       if (appUpdate.registration?.installing) {
         showNotification("جاري البحث عن تحديثات...");
       } else if (appUpdate.registration?.waiting) {
@@ -223,7 +264,7 @@ function App() {
   }, []);
 
   const handleExport = useCallback((format: 'txt' | 'csv', startDate: string, endDate: string) => {
-      const filteredHistory = calculator.history; // Filtering logic can be added here if needed
+      const filteredHistory = calculator.history;
 
       if (filteredHistory.length === 0) {
           showNotification("لا يوجد سجل للتصدير.");
@@ -285,6 +326,10 @@ function App() {
           onOpenSupport={() => { closeAllPanels(); setIsSupportOpen(true); }}
           onShowAbout={() => { closeAllPanels(); setIsAboutOpen(true); }}
           onCheckForUpdates={onCheckForUpdates}
+          // --- تمرير إعدادات الدوران ---
+          autoRotate={autoRotate}
+          onAutoRotateToggle={() => setAutoRotate(!autoRotate)}
+          // ---
         />}
         {isHistoryOpen && <HistoryPanel
           isOpen={isHistoryOpen}
