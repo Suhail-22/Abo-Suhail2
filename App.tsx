@@ -57,13 +57,18 @@ function App() {
     } else {
       lockToPortrait();
       handleOrientationChange = () => {
+        // --- تطبيق CSS للحفاظ على الوضع الرأسي ---
         if (screen.orientation && Math.abs(screen.orientation.angle) % 180 !== 0) {
           lockToPortrait();
+          document.body.classList.add('locked-portrait');
+        } else {
+          document.body.classList.remove('locked-portrait');
         }
       };
       window.addEventListener('orientationchange', handleOrientationChange);
     }
 
+    // --- تنظيف ---
     return () => {
       if (handleOrientationChange) {
         window.removeEventListener('orientationchange', handleOrientationChange);
@@ -71,6 +76,7 @@ function App() {
       if (autoRotate) {
          unlockOrientation();
       }
+      document.body.classList.remove('locked-portrait');
     };
   }, [autoRotate]); // يتغير عند تغيير autoRotate
   // --- النهاية ---
@@ -293,6 +299,31 @@ function App() {
   }, [calculator.history, closeAllPanels, showNotification, createExportContent]);
   
   const anyPanelOpen = isSettingsOpen || isHistoryOpen || isSupportOpen || isAboutOpen;
+
+  // --- إضافة CSS ديناميكي لقفل الدوران ---
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      body.locked-portrait {
+        transform: rotate(90deg);
+        transform-origin: center center;
+        width: 100vh;
+        height: 100vw;
+        overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9999;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-cover bg-center bg-fixed" style={{ background: 'var(--bg-primary-gradient)' }}>
