@@ -1,74 +1,52 @@
-const CACHE_NAME = 'abo-suhail-calculator-v20251116-FINAL';
-// قائمة الملفات التي يجب تخزينها يدوياً
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/offline.html',
-  '/manifest.json',
-  
-  // الملفات التي يتم إنشاؤها بعد البناء (قد تتغير أسماؤها)
-  // يجب إضافة الملفات التي تنتجها عملية البناء (Build) هنا
-  // نحن نضيف الملفات الرئيسية بناءً على توقعات Vite (يجب أن توجد هذه المجلدات):
-  '/assets/index.js',       // ملف JavaScript الرئيسي للتطبيق (قد يختلف الاسم)
-  '/assets/index.css',      // ملف CSS الرئيسي للتطبيق (قد يختلف الاسم)
-  '/assets/icon.svg',
-  '/assets/icon-192.png',   // أيقونات Manifest
-  '/assets/icon-512.png',
-  
-  // الملفات الضرورية الأخرى
-  // ... قم بإضافة مسار أي ملفات CSS أو JS أخرى تستخدمها هنا...
-];
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.4.1/workbox-sw.js');
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Attempting to cache ALL essential files.');
-        // استخدام .addAll() لتخزين كل الملفات دفعة واحدة
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => self.skipWaiting())
-      .catch((error) => {
-        // إذا فشل تخزين ملف واحد، سيفشل Service Worker بالكامل
-        console.error('Caching failed for one or more files in the list.', error);
-      })
-  );
-});
+if (workbox) {
+  console.log(`Workbox is loaded.`);
 
-// استراتيجية التشغيل: الكاش أولاً مع fallback
-self.addEventListener('fetch', (event) => {
-  if (!(event.request.url.indexOf('http') === 0)) return; 
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response; // إرجاع من الكاش
-        }
-        
-        // جلب من الشبكة
-        return fetch(event.request)
-               .catch(() => {
-                   // فشل الشبكة - إذا كان المستخدم يتنقل في صفحة (navigate)
-                   if (event.request.mode === 'navigate') {
-                       return caches.match('offline.html');
-                   }
-               });
-      })
-  );
-});
+  workbox.core.skipWaiting();
+  workbox.core.clientsClaim();
 
-self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+  // الملفات التي يجب تخزينها (تعديل المسارات لضمان تغطية جميع الأصول)
+  workbox.precaching.precacheAndRoute([
+      // الملفات الأساسية
+      {url: '/', revision: null},
+      {url: '/index.html', revision: null},
+      {url: '/offline.html', revision: null},
+      {url: '/manifest.json', revision: null},
+
+      // الأصول الثابتة (يجب أن توجد في assets/)
+      {url: '/assets/icon.svg', revision: null},
+      {url: '/assets/icon-192.png', revision: null},
+      {url: '/assets/icon-512.png', revision: null},
+      // هنا يجب إضافة ملفات JS/CSS الناتجة عن البناء، ولكننا لا نعرف أسماءها ذات الـ Hash.
+      // هذا الجزء يجب أن يكون كافيًا لتثبيت Service Worker.
+  ]);
+
+  // استراتيجية NetworkFirst للملفات الأخرى
+  const networkFirst = new workbox.strategies.NetworkFirst({
+      cacheName: 'general-assets',
+      plugins: [ 
+        new workbox.expiration.ExpirationPlugin({ 
+            maxEntries: 50,
+            maxAgeSeconds: 30 * 24 * 60 * 60, // 30 يوماً
+        }) 
+      ],
+  });
+
+  // توفير صفحة 'offline.html' كبديل عند فشل التنقل
+  workbox.routing.setCatchHandler(async ({ event }) => {
+    if (event.request.mode === 'navigate') {
+      return caches.match('offline.html');
+    }
+    return Response.error();
+  });
+
+  // تسجيل مسار Service Worker
+  workbox.routing.registerRoute(
+    ({ url }) => url.pathname.startsWith('/'),
+    networkFirst
   );
-});
+
+} else {
+  console.error(`Workbox failed to load.`);
+}
