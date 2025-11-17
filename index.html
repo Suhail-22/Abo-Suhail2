@@ -6,140 +6,23 @@
   <title>Abo Suhail Calculator</title>
   <meta name="theme-color" content="#FFFFFF"/>
   
-  <!-- Preconnect to required origins for faster resource fetching -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
 
-  <!-- Defer non-critical CSS (Google Fonts) to avoid render-blocking -->
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Cairo:wght@400;700&family=Almarai:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Cairo:wght@400;700&family=Almarai:wght@400;700&display=swap"></noscript>
   
-  <!-- App manifest and icons -->
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/icon.svg">
-  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icon-180.png">
+  <link rel="mask-icon" href="/assets/icon.svg" color="#0F172A">
+  <link rel="manifest" href="/manifest.json">
   
-  <!-- Defer TailwindCSS script to prevent render-blocking -->
-  <script src="https://cdn.tailwindcss.com" defer></script>
-  
-  <style>
-    :root {
-      /* --- Light Theme --- */
-      --bg-primary-gradient: linear-gradient(135deg, #F0F4F8, #D9E2EC);
-      --bg-calculator: rgba(255, 255, 255, 0.7);
-      --bg-display: #EDF2F7;
-      --bg-header: rgba(237, 242, 247, 0.5);
-      --bg-panel: rgba(255, 255, 255, 0.95);
-      --text-primary: #1A202C;
-      --text-secondary: #4A5568;
-      --text-display: #1A202C;
-      --border-primary: rgba(0, 0, 0, 0.08);
-      --border-secondary: rgba(0, 0, 0, 0.06);
-      --button-border-color: rgba(0, 0, 0, 0.08);
-      --button-number-bg: linear-gradient(145deg, #E2E8F0, #FFFFFF);
-      --button-function-bg: linear-gradient(145deg, #CBD5E0, #E2E8F0);
-      --button-number-shadow: 0 5px 10px rgba(0,0,0,0.08);
-      --button-number-active-shadow: inset 0 3px 5px rgba(0,0,0,0.1);
-      --bg-inset: rgba(0, 0, 0, 0.05);
-      --bg-inset-light: rgba(0, 0, 0, 0.03);
-      --calculator-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
-      --accent-color: #2B6CB0;
-      --accent-color-contrast: #FFFFFF;
-      --accent-equals-bg: linear-gradient(145deg, #38A169, #2F855A);
-      --accent-equals-text: #FFFFFF;
-      --accent-equals-shadow: 0 4px 6px -1px rgb(46 125 50 / 0.2), 0 2px 4px -2px rgb(46 125 50 / 0.2);
-      --accent-equals-pulse-shadow: 0 10px 15px -3px rgb(46 125 50 / 0.2), 0 4px 6px -4px rgb(46 125 50 / 0.2);
-      --display-text-shadow: none;
-    }
-    .dark {
-      /* --- Dark Theme --- */
-      --bg-primary-gradient: linear-gradient(135deg, #0a0e17, #131827);
-      --bg-calculator: rgba(15, 25, 45, 0.7);
-      --bg-display: rgba(10, 20, 40, 0.85);
-      --bg-header: rgba(20, 35, 70, 0.5);
-      --bg-panel: rgba(20, 35, 70, 0.95);
-      --text-primary: #e3f2fd;
-      --text-secondary: #bbdefb;
-      --text-display: white;
-      --border-primary: rgba(80, 150, 255, 0.35);
-      --border-secondary: rgba(100, 180, 255, 0.25);
-      --button-border-color: rgba(80, 150, 255, 0.3);
-      --button-number-bg: linear-gradient(145deg, rgba(30, 50, 85, 0.7), rgba(40, 65, 100, 0.8));
-      --button-function-bg: linear-gradient(145deg, rgba(30, 55, 100, 0.8), rgba(45, 75, 120, 0.9));
-      --button-number-shadow: inset 0 -3px 8px rgba(0, 15, 40, 0.8), 0 4px 10px rgba(0, 10, 30, 0.5), 0 0 1px rgba(100, 180, 255, 0.6);
-      --button-number-active-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.7), 0 1px 4px rgba(0, 0, 0, 0.4);
-      --bg-inset: rgba(20, 35, 70, 0.6);
-      --bg-inset-light: rgba(30, 50, 90, 0.5);
-      --calculator-shadow: 0 0 50px rgba(60, 120, 255, 0.35), 0 25px 60px rgba(0, 0, 0, 0.5);
-      --accent-color: #4fc3f7;
-      --button-function-text-color: #f075ff;
-      --accent-color-contrast: #000000;
-      --display-text-shadow: 0 0 14px rgba(100, 180, 255, 0.6);
-    }
-    
-    html {
-      font-size: calc(16px * var(--font-scale, 1));
-    }
-
-    body {
-      font-family: var(--font-family, 'Tajawal', sans-serif);
-      background: var(--bg-primary-gradient);
-      color: var(--text-primary);
-      transition: background 0.3s ease-in-out, color 0.3s ease-in-out;
-    }
-
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: var(--bg-panel); }
-    ::-webkit-scrollbar-thumb { background-color: var(--accent-color); border-radius: 10px; border: 2px solid var(--bg-panel); }
-    * { scrollbar-width: thin; scrollbar-color: var(--accent-color) var(--bg-panel); }
-
-    @keyframes fade-in-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-fade-in-down { animation: fade-in-down 0.5s ease-out forwards; }
-    @keyframes pulse-special { 0%, 100% { transform: scale(1); box-shadow: var(--accent-equals-shadow); } 50% { transform: scale(1.05); box-shadow: var(--accent-equals-pulse-shadow); } }
-    .animate-pulse-special { animation: pulse-special 2s infinite ease-in-out; }
-    @keyframes container-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    .animate-container-in { animation: container-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-    @keyframes pop-in { from { transform: translateY(10px) scale(0.98); opacity: 0.6; } to { transform: translateY(0) scale(1); opacity: 1; } }
-    .animate-pop-in { animation: pop-in 0.3s ease-out forwards; }
-    @keyframes bounce-in-up { 0% { opacity: 0; transform: translateY(30px) scale(0.9); } 50% { opacity: 1; transform: translateY(-10px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }
-    .animate-bounce-in-up { animation: bounce-in-up 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
-
-    .error-highlight { font-weight: bold; }
-    .ai-suggestion-highlight { text-decoration: underline; text-decoration-style: dotted; text-decoration-color: var(--accent-color); text-underline-offset: 4px; text-decoration-thickness: 2px; }
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    @media (orientation: landscape) and (max-height: 550px) {
-      #app-container {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-      }
-      #calculator-container {
-        max-width: 95vw;
-        width: 95vw;
-      }
-      #calculator-main-content {
-        display: flex;
-        flex-direction: row-reverse;
-        gap: 1rem;
-        align-items: flex-start;
-      }
-      #calculator-display-wrapper {
-        flex: 1 1 55%;
-        min-width: 0;
-      }
-      #calculator-buttons-wrapper {
-        flex: 1 1 45%;
-        min-width: 0;
-      }
-    }
-  </style>
-
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@18.3.1",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
     "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
     "react/": "https://esm.sh/react@18.3.1/",
     "react-dom/": "https://esm.sh/react-dom@18.3.1/"
@@ -151,7 +34,18 @@
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root"></div>
   <script type="module" src="index.tsx"></script>
- 
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        // نعتمد على نظام البناء (Vercel/Vite) لتوفير Service Worker الصحيح
+        navigator.serviceWorker.register('/service-worker.js').then(registration => {
+          console.log('ServiceWorker registered successfully.');
+        }).catch(err => {
+          console.error('ServiceWorker registration failed:', err);
+        });
+      });
+    }
   </script>
 </body>
 </html>
