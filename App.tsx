@@ -1,3 +1,4 @@
+// App.tsx
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useCalculator } from './hooks/useCalculator';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -29,38 +30,10 @@ function App() {
   const [appUpdate, setAppUpdate] = useState<{ available: boolean; registration: ServiceWorkerRegistration | null }>({ available: false, registration: null });
   const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, onConfirm: () => {}, onCancel: () => {}, title: '', message: '' });
 
-  const [theme, setTheme] = useLocalStorage<string>('calcTheme_v3', 'system');
-  const [fontFamily, setFontFamily] = useLocalStorage<string>('calcFontFamily_v2', 'Tajawal');
-  const [fontScale, setFontScale] = useLocalStorage<number>('calcFontScale_v2', 1);
-  const [buttonTextColor, setButtonTextColor] = useLocalStorage<string | null>('calcButtonTextColor_v1', null);
-  // --- إضافة إعداد الدوران ---
-  const [autoRotate, setAutoRotate] = useLocalStorage<boolean>('autoRotate', true); // القيمة الافتراضية: السماح بالدوران
-  // ---
+  // --- إضافة حالة قفل الدوران ---
+  const [autoRotate, setAutoRotate] = useLocalStorage<boolean>('autoRotate', true);
 
-  const showNotification = useCallback((message: string) => {
-    setNotification({ message, show: true });
-    setTimeout(() => {
-      setNotification({ message: '', show: false });
-    }, 2500);
-  }, []);
-  
-  const calculator = useCalculator({ showNotification });
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('history') === 'true') {
-        setIsHistoryOpen(true);
-        window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (params.has('text')) {
-        const sharedText = params.get('text');
-        if (sharedText) {
-            calculator.actions.updateInput(sharedText);
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    }
-  }, [calculator.actions]);
-  
-  // --- إضافة useEffect للتحكم في دوران الشاشة ---
+  // --- تأثير لتطبيق قفل الدوران ---
   useEffect(() => {
     let handleOrientationChange: (() => void) | undefined;
 
@@ -98,9 +71,37 @@ function App() {
          unlockOrientation();
       }
     };
-  }, [autoRotate]);
-  // ---
+  }, [autoRotate]); // يتغير عند تغيير autoRotate
+  // --- النهاية ---
 
+  const [theme, setTheme] = useLocalStorage<string>('calcTheme_v3', 'system');
+  const [fontFamily, setFontFamily] = useLocalStorage<string>('calcFontFamily_v2', 'Tajawal');
+  const [fontScale, setFontScale] = useLocalStorage<number>('calcFontScale_v2', 1);
+  const [buttonTextColor, setButtonTextColor] = useLocalStorage<string | null>('calcButtonTextColor_v1', null);
+
+  const showNotification = useCallback((message: string) => {
+    setNotification({ message, show: true });
+    setTimeout(() => {
+      setNotification({ message: '', show: false });
+    }, 2500);
+  }, []);
+  
+  const calculator = useCalculator({ showNotification });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('history') === 'true') {
+        setIsHistoryOpen(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.has('text')) {
+        const sharedText = params.get('text');
+        if (sharedText) {
+            calculator.actions.updateInput(sharedText);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+  }, [calculator.actions]);
+  
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
@@ -206,6 +207,9 @@ function App() {
 
   const onCheckForUpdates = useCallback(() => {
     appUpdate.registration?.update().then(() => {
+      // After update(), the state of installing/waiting might not be immediately available.
+      // The 'updatefound' event listener is the more reliable way to detect updates.
+      // For immediate feedback, we can check, but it might not catch the very latest state.
       if (appUpdate.registration?.installing) {
         showNotification("جاري البحث عن تحديثات...");
       } else if (appUpdate.registration?.waiting) {
@@ -264,7 +268,7 @@ function App() {
   }, []);
 
   const handleExport = useCallback((format: 'txt' | 'csv', startDate: string, endDate: string) => {
-      const filteredHistory = calculator.history;
+      const filteredHistory = calculator.history; // Filtering logic can be added here if needed
 
       if (filteredHistory.length === 0) {
           showNotification("لا يوجد سجل للتصدير.");
@@ -326,10 +330,10 @@ function App() {
           onOpenSupport={() => { closeAllPanels(); setIsSupportOpen(true); }}
           onShowAbout={() => { closeAllPanels(); setIsAboutOpen(true); }}
           onCheckForUpdates={onCheckForUpdates}
-          // --- تمرير إعدادات الدوران ---
+          // --- تمرير حالة قفل الدوران ---
           autoRotate={autoRotate}
-          onAutoRotateToggle={() => setAutoRotate(!autoRotate)}
-          // ---
+          setAutoRotate={setAutoRotate}
+          // --- النهاية ---
         />}
         {isHistoryOpen && <HistoryPanel
           isOpen={isHistoryOpen}
