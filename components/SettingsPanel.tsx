@@ -64,22 +64,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, settings
         <h3 className="text-[var(--accent-color)] text-2xl font-bold">⚙️ الإعدادات</h3>
         <button onClick={onClose} className="text-2xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">✕</button>
       </div>
-      {/* --- إضافة قسم قفل الدوران --- */}
-      <div className="mb-6">
-        <h4 className="text-lg font-semibold text-[var(--text-secondary)] mb-3">📱 الشاشة</h4>
-        <label className="flex items-center justify-between text-[var(--text-secondary)] mb-4">
-          <span>قفل دوران الشاشة:</span>
-          <input
-            type="checkbox"
-            checked={!autoRotate} // تحقق تعني *قفل* (عكس autoRotate)
-            onChange={() => setAutoRotate(!autoRotate)} // تبديل الحالة
-            className="w-5 h-5 accent-[var(--accent-color)]"
-          />
-          <span className="text-xs text-[var(--text-secondary)] ml-2">({autoRotate ? 'مسموح' : 'مغلق'})</span>
-        </label>
-      </div>
-      <hr className="border-[var(--border-secondary)] my-4" />
-      {/* --- النهاية --- */}
       <div className="mb-6">
         <h4 className="text-lg font-semibold text-[var(--text-secondary)] mb-3">🎨 المظهر</h4>
         <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-[var(--bg-inset)]">
@@ -166,6 +150,18 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, settings
           <span>تفعيل المؤثرات الصوتية</span>
           <input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} className="w-5 h-5 accent-[var(--accent-color)]" />
         </label>
+        {/* --- إضافة خيار قفل الدوران هنا --- */}
+        <label className="flex items-center justify-between text-[var(--text-secondary)] mt-4">
+          <span>قفل دوران الشاشة:</span>
+          <input
+            type="checkbox"
+            checked={!autoRotate} // تحقق تعني *قفل* (عكس autoRotate)
+            onChange={() => setAutoRotate(!autoRotate)} // تبديل الحالة
+            className="w-5 h-5 accent-[var(--accent-color)]"
+          />
+          <span className="text-xs text-[var(--text-secondary)] ml-2">({autoRotate ? 'مسموح' : 'مغلق'})</span>
+        </label>
+        {/* --- النهاية --- */}
       </div>
       <hr className="border-[var(--border-secondary)] my-4" />
       <div className="flex flex-col gap-3">
