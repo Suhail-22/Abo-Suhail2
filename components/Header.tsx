@@ -7,55 +7,81 @@ interface HeaderProps {
   onToggleSettings: () => void;
   onShare: () => void;
   onToggleHistory: () => void;
-  historyCount: number; // العدد الإجمالي
+  historyCount: number;
   entryCountDisplay: number;
-  // --- إضافة prop لعدد العمليات اليومية ---
   dailyCount: number;
-  // --- النهاية ---
 }
 
+const getTaxModeLabel = (taxSettings: TaxSettings): string => {
+  if (!taxSettings.isEnabled) return '';
+  switch (taxSettings.mode) {
+    case 'add-15':
+      return 'ضريبة: +15%';
+    case 'extract-custom':
+      return `ضريبة: -${taxSettings.rate}%`;
+    case 'divide-93':
+      return 'ضريبة: ÷0.93';
+    case 'custom':
+      return `ضريبة: +${taxSettings.rate}%`;
+    default:
+      return '';
+  }
+};
+
 const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare, onToggleHistory, historyCount, entryCountDisplay, dailyCount }) => {
+  const taxLabel = getTaxModeLabel(taxSettings);
+
   return (
-    <div className="flex justify-between items-center mb-3 px-1">
-      <div className="flex gap-2">
-        <button
-          onClick={onToggleSettings}
-          className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-          aria-label="الإعدادات"
-        >
-          ⚙️
-        </button>
-        <button
-          onClick={onShare}
-          className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-          aria-label="مشاركة"
-        >
-          ↗️
-        </button>
-      </div>
-      <div className="flex flex-col items-center">
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-[var(--text-secondary)]">السجل</span>
-          <span className="relative">
-            <button
-              onClick={onToggleHistory}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-              aria-label="فتح السجل"
-            >
-              📜
-            </button>
-            {/* --- عرض عدد العمليات اليومية --- */}
-            {dailyCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[0.6rem] rounded-full h-4 w-4 flex items-center justify-center">
-                {dailyCount}
-              </span>
-            )}
-            {/* --- النهاية --- */}
+    <div className="flex flex-col w-full">
+      {/* --- شريط عرض الضريبة --- */}
+      {taxLabel && (
+        <div className="flex justify-center mb-1">
+          <span className="text-xs font-bold text-orange-400 animate-fade-in-down">
+            {taxLabel}
           </span>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-[var(--text-secondary)]">({historyCount})</span> {/* العدد الإجمالي */}
-          <span className="text-xs text-[var(--text-secondary)]">({entryCountDisplay})</span>
+      )}
+
+      {/* --- شريط الأزرار --- */}
+      <div className="flex justify-between items-center px-1">
+        <div className="flex gap-2">
+          <button
+            onClick={onToggleSettings}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
+            aria-label="الإعدادات"
+          >
+            ⚙️
+          </button>
+          <button
+            onClick={onShare}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
+            aria-label="مشاركة"
+          >
+            ↗️
+          </button>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-[var(--text-secondary)]">السجل</span>
+            <span className="relative">
+              <button
+                onClick={onToggleHistory}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
+                aria-label="فتح السجل"
+              >
+                📜
+              </button>
+              {dailyCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[0.6rem] rounded-full h-4 w-4 flex items-center justify-center">
+                  {dailyCount}
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-[var(--text-secondary)]">({historyCount})</span>
+            <span className="text-xs text-[var(--text-secondary)]">({entryCountDisplay})</span>
+          </div>
         </div>
       </div>
     </div>
