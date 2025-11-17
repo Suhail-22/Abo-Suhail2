@@ -17,11 +17,10 @@ if (workbox) {
       'assets/icon-512.png',
       'assets/screenshot-narrow.png',
       'assets/screenshot-wide.png',
-      'index.tsx', // ملاحظة: هذا الملف يجب أن لا يتم تخزينه يدوياً في الغالب
-      'App.tsx',   // ملاحظة: هذا الملف يجب أن لا يتم تخزينه يدوياً في الغالب
+      'index.tsx',
+      'App.tsx',
       'types.ts',
       'constants.ts',
-      // (جميع ملفات المكونات الأخرى التي كانت في قائمتك الأصلية)
       'components/AboutPanel.tsx',
       'components/Button.tsx',
       'components/ButtonGrid.tsx',
@@ -40,11 +39,57 @@ if (workbox) {
       'hooks/useLocalStorage.tsx',
       'services/calculationEngine.ts',
       'services/geminiService.ts',
+      'services/localErrorFixer.ts',
   ];
-
+  
+  // Use revision: null for files that don't have a hash in their name.
+  // Workbox will still cache them but won't be able to do efficient updates without a revision.
+  // This is okay for this project structure.
   workbox.precaching.precacheAndRoute(filesToPrecache.map(url => ({ url, revision: null })));
 
-  // 2. NETWORK FIRST strategy for dynamic content and navigation
+  // 2. RUNTIME CACHING
+  
+  // Google Fonts (stylesheets)
+  workbox.routing.registerRoute(
+    ({url}) => url.origin === 'https://fonts.googleapis.com',
+    new workbox.strategies.StaleWhileRevalidate({
+      cacheName: 'google-fonts-stylesheets',
+    })
+  );
+
+  // Google Fonts (font files)
+  workbox.routing.registerRoute(
+    ({url}) => url.origin === 'https://fonts.gstatic.com',
+    new workbox.strategies.CacheFirst({
+      cacheName: 'google-fonts-webfonts',
+      plugins: [
+        new workbox.cacheableResponse.CacheableResponsePlugin({ statuses: [0, 200] }),
+        new workbox.expiration.ExpirationPlugin({ maxAgeSeconds: 60 * 60 * 24 * 365, maxEntries: 30 }),
+      ],
+    })
+  );
+  
+  // Tailwind CSS from CDN
+  workbox.routing.registerRoute(
+    ({url}) => url.href === 'https://cdn.tailwindcss.com',
+    new workbox.strategies.StaleWhileRevalidate({
+        cacheName: 'tailwind-css',
+    })
+  );
+
+  // esm.sh scripts
+  workbox.routing.registerRoute(
+    ({ url }) => url.origin === 'https://esm.sh',
+    new workbox.strategies.StaleWhileRevalidate({
+      cacheName: 'third-party-scripts',
+      plugins: [
+        new workbox.cacheableResponse.CacheableResponsePlugin({ statuses: [0, 200] }),
+        new workbox.expiration.ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }),
+      ]
+    })
+  );
+
+  // 3. OFFLINE NAVIGATION FALLBACK
   const networkFirstWithOfflineFallback = new workbox.strategies.NetworkFirst({
       cacheName: 'pages-cache',
       plugins: [ new workbox.expiration.ExpirationPlugin({ maxEntries: 50 }) ],
