@@ -29,6 +29,26 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
     setEditingItem(null);
   };
 
+  // --- حساب العد اليومي والإجمالي ---
+  const { dailyCounts, totalCount } = useMemo(() => {
+    const counts: Record<string, number> = {};
+    let total = 0;
+
+    history.forEach(item => {
+      // استخدام item.date بالكامل (مثلاً "18/11/2025") كمفتاح
+      counts[item.date] = (counts[item.date] || 0) + 1;
+      total++;
+    });
+
+    return { dailyCounts: counts, totalCount: total };
+  }, [history]);
+
+  const todayDateStr = new Date().toLocaleDateString('ar-EG', { day: 'numeric', month: 'numeric', year: 'numeric' }).split('/').reverse().join('/'); // "2025/11/18"
+  // نحتاج إلى تحويل التاريخ من "DD/MM/YYYY" إلى "YYYY/MM/DD" لمقارنته
+  const todayDateKey = todayDateStr; // item.date محفوظ بالفعل كـ YYYY/MM/DD
+  const todayCount = dailyCounts[todayDateKey] || 0;
+  // ---
+
   const groupedAndFilteredHistory = useMemo(() => {
     const dailyTotals: { [date: string]: number } = {};
     history.forEach(item => {
@@ -76,6 +96,16 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
 
   return (
     <div className={`absolute top-0 bottom-0 left-0 w-[320px] max-w-[85vw] bg-[var(--bg-panel)] text-[var(--text-primary)] z-50 p-5 shadow-2xl overflow-y-auto border-r-2 border-[var(--border-primary)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform ${isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 pointer-events-none'}`}>
+      {/* --- إضافة عناصر العد --- */}
+      <div className="flex justify-between items-center mb-2">
+        <div className="text-sm font-semibold text-[var(--text-secondary)]">
+          <span className="text-green-500">اليوم: {todayCount} عملية</span>
+        </div>
+        <div className="text-sm font-semibold text-[var(--text-secondary)]">
+          <span className="text-blue-500">الإجمالي: {totalCount} عملية</span>
+        </div>
+      </div>
+      {/* --- */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-[var(--accent-color)] text-2xl font-bold">{`السجل (${history.length})`} 📜</h3>
         <button onClick={onClose} className="text-2xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">✕</button>
@@ -96,17 +126,24 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
         ) : (
           groupedAndFilteredHistory.map(({ date, items, total }, groupIndex) => (
             <div key={date}>
-              <div className={`flex justify-between items-center py-2 ${groupIndex > 0 ? 'mt-3 border-t border-[var(--border-secondary)]' : ''}`}>
-                <div className="flex items-baseline gap-2">
-                    <span className="text-base font-bold text-green-400">
-                        الإجمالي: {total.toLocaleString('en-US', { maximumFractionDigits: 2, useGrouping: false })}
-                    </span>
-                    <span className="text-xs text-[var(--text-secondary)]">
-                        ({items.length} عمليات)
-                    </span>
+              {/* --- تعديل القسم الذي يعرض التاريخ --- */}
+              <div className={`py-2 ${groupIndex > 0 ? 'mt-4' : ''}`}>
+                <div className="date-separator"> {/* عنصر الخط البارز */}
+                  <span>{date}</span>
                 </div>
-                <h4 className="text-sm font-bold text-[var(--text-secondary)]">{date}</h4>
+                <div className="flex justify-between items-center pt-2"> {/* تحريك العناصر الأخرى إلى الأسفل */}
+                  <div className="flex items-baseline gap-2">
+                      <span className="text-base font-bold text-green-400">
+                          الإجمالي: {total.toLocaleString('en-US', { maximumFractionDigits: 2, useGrouping: false })}
+                      </span>
+                      <span className="text-xs text-[var(--text-secondary)]">
+                          ({items.length} عمليات)
+                      </span>
+                  </div>
+                  {/* h4 للتاريخ تم نقله إلى العنصر الجديد date-separator */}
+                </div>
               </div>
+              {/* --- */}
               <div className="flex flex-col gap-2">
                 {items.map((item) => {
                   const isEditing = editingItem && editingItem.id === item.id;
@@ -168,3 +205,25 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
 };
 
 export default HistoryPanel;
+
+// --- أضف النمط CSS التالي إلى ملف CSS الخاص بـ HistoryPanel ---
+/*
+.history-panel .date-separator {
+  border-bottom: 2px solid #007bff; /* استخدم لون بارز */
+  margin: 10px 0;
+  text-align: center;
+  position: relative;
+}
+
+.history-panel .date-separator span {
+  background: var(--bg-panel); /* لون الخلفية مطابق لخلفية اللوحة */
+  padding: 0 10px; /* إضافة مساحة داخلية للنص */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+*/
