@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy, useMemo } from 'react';
 import { useCalculator } from './hooks/useCalculator';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import Calculator from './components/Calculator';
@@ -34,9 +34,25 @@ function App() {
   const [fontScale, setFontScale] = useLocalStorage<number>('calcFontScale_v2', 1);
   const [buttonTextColor, setButtonTextColor] = useLocalStorage<string | null>('calcButtonTextColor_v1', null);
   
-  // [MODIFIED] ميزة قفل الدوران (تم الإبقاء عليها كما هي، المشكلة بيئية)
+  // [NEW/RE-ADDED] ميزة قفل الدوران
   const [isOrientationLocked, setIsOrientationLocked] = useLocalStorage<boolean>('isOrientationLocked_v1', false);
   
+  const showNotification = useCallback((message: string) => {
+    setNotification({ message, show: true });
+    setTimeout(() => {
+      setNotification({ message: '', show: false });
+    }, 2500);
+  }, []);
+  
+  const calculator = useCalculator({ showNotification });
+
+  // [MODIFIED] حساب عدد عمليات اليوم فقط
+  const todayHistoryCount = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return calculator.history.filter(item => item.date === today).length;
+  }, [calculator.history]);
+
+  // [RE-ADDED] منطق قفل الدوران
   useEffect(() => {
     if ('orientation' in screen && 'lock' in screen.orientation) {
         if (isOrientationLocked) {
@@ -50,19 +66,9 @@ function App() {
                  console.log("Orientation unlock failed, possibly due to browser restrictions.");
             }
         }
-    } else {
-         // showNotification("قفل الدوران غير مدعوم في متصفحك.")
-    }
+    } 
   }, [isOrientationLocked]);
-
-  const showNotification = useCallback((message: string) => {
-    setNotification({ message, show: true });
-    setTimeout(() => {
-      setNotification({ message: '', show: false });
-    }, 2500);
-  }, []);
-  
-  const calculator = useCalculator({ showNotification });
+  // نهاية منطق قفل الدوران
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -203,13 +209,13 @@ function App() {
       }
   };
   
-  // تعديل وظيفة التصدير لإضافة BOM لـ TXT (لإصلاح مشكلة التشفير)
+  // تعديل وظيفة التصدير لإضافة BOM لـ TXT و CSV (لإصلاح مشكلة التشفير)
   const createExportContent = useCallback((history: any[], format: 'txt' | 'csv') => {
     const getTaxModeLabel = (mode?: string, rate?: number) => {
         if (!mode) return "غير مفعلة";
         switch (mode) {
             case 'add-15': return "إضافة 15%";
-            case 'divide-93': return "القسمة على 0.93"; // تم الإبقاء على الوصف الطويل هنا للتصدير
+            case 'divide-93': return "القسمة على 0.93"; 
             case 'custom': return `إضافة مخصص ${rate}%`;
             case 'extract-custom': return `استخلاص مخصص ${rate}%`;
             default: return "غير معروف";
@@ -229,7 +235,6 @@ function App() {
             (item.notes ? `ملاحظة: ${item.notes}\n` : '') +
             "------------------------------------\n"
         ).join('\n');
-        // تم إضافة BOM هنا
         return BOM + header + content;
     }
 
@@ -269,13 +274,12 @@ function App() {
       closeAllPanels();
   }, [calculator.history, closeAllPanels, showNotification, createExportContent]);
   
-  // [MODIFIED] وظيفة المشاركة (Share) - تم إضافة الملاحظات
-  
+  // وظيفة المشاركة (Share) - تم التأكد من إضافة الملاحظات
   const createShareContent = useCallback((history: HistoryItem[], type: 'full' | 'day', date?: string) => {
     const formatItem = (item: HistoryItem) => 
         `${item.expression} = ${item.result}` + 
         (item.taxResult ? ` (مع ضريبة: ${item.taxResult})` : '') + 
-        (item.notes ? ` [الملاحظة: ${item.notes}]` : ''); // <--- تم إضافة الملاحظات هنا
+        (item.notes ? ` [الملاحظة: ${item.notes}]` : ''); 
 
     if (type === 'full') {
         const header = "--- سجل عمليات الآلة الحاسبة (الكامل) ---\n";
@@ -356,6 +360,8 @@ function App() {
           onToggleHistory={() => setIsHistoryOpen(v => !v)}
           onShare={showNotification}
           entryCount={calculator.entryCount}
+          // [MODIFIED] تمرير عدّاد اليوم
+          historyCount={todayHistoryCount} 
         />
       </div>
       <Overlay show={anyPanelOpen} onClick={closeAllPanels} /> 
@@ -372,7 +378,7 @@ function App() {
           setFontScale={setFontScale}
           buttonTextColor={buttonTextColor}
           setButtonTextColor={setButtonTextColor}
-          // [MODIFIED] تمرير خصائص قفل الدوران
+          // [RE-ADDED] تمرير خصائص قفل الدوران
           isOrientationLocked={isOrientationLocked} 
           setIsOrientationLocked={setIsOrientationLocked} 
           onOpenSupport={() => { closeAllPanels(); setIsSupportOpen(true); }}
