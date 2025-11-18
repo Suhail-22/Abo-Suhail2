@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build", // ← تأكد من استخدام tsc
     "preview": "vite preview"
   },
   "dependencies": {
@@ -17,6 +17,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
-    "vite-plugin-pwa": "^0.21.1"
+    "vite-plugin-pwa": "^0.21.1",
+    "vite-plugin-checker": "^0.8.0" // ← أضف هذا
   }
 }
