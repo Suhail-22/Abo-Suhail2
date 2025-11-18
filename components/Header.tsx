@@ -60,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      {/* --- شريط الأزرار (الترتيب النهائي بعد التبديل) --- */}
+      {/* --- شريط الأزرار (الترتيب النهائي) --- */}
       <div className="flex justify-between items-center px-1">
         
         {/* --- الجانب الأيسر: الإعدادات ← الإدخالات --- */}
@@ -92,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* --- زر المشاركة --- */}
+          {/* --- مشاركة --- */}
           <button
             onClick={onShare}
             className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
