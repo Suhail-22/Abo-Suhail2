@@ -1,51 +1,46 @@
-// types.ts
 
-export type TaxMode = 'add-15' | 'extract-custom' | 'divide-93' | 'custom' | 'off';
-export type TaxType = 'addition' | 'discount';
 
 export interface HistoryItem {
   id: number;
   expression: string;
   result: string;
+  taxResult: string | null;
+  taxMode: string | null;
+  taxRate: number | null;
+  taxLabel: string | null;
   date: string;
   time: string;
-  taxMode: TaxMode;
-  taxRate: number;
-  taxResult: string;
-  taxLabel: string;
   notes: string;
 }
 
 export interface TaxSettings {
   isEnabled: boolean;
-  mode: TaxMode;
+  mode: 'add-15' | 'divide-93' | 'custom' | 'extract-custom';
   rate: number;
   showTaxPerNumber: boolean;
 }
 
-export interface CalculatorState {
-  currentInput: string;
-  expression: string;
-  result: string;
-  tax: string;
-  taxDisplay: string;
-  taxMode: 'off' | 'add-15' | 'extract-custom' | 'divide-93' | 'custom';
-  taxRate: number;
-  customTax: number;
-  taxType: 'addition' | 'discount'; // ← إضافة هذا الحقل
-  history: HistoryItem[];
-  theme: string;
-  showSettings: boolean;
-  showHistory: boolean;
-  showAbout: boolean;
-  showSupport: boolean;
-  showConfirmation: boolean;
-  confirmationMessage: string;
-  onConfirm: () => void;
-  editableIndex: number;
-  inlineEditorValue: string;
-  isEditing: boolean;
-  aiSuggestion: string;
-  showAISuggestion: boolean;
-  lastCalculatedResult: number | null;
+export interface ErrorState {
+  message: string;
+  details: {
+    pre: string;
+    highlight: string;
+    post: string;
+  } | null;
+}
+
+export interface AISuggestion {
+  message: string;
+  fix: string | null;
+}
+
+export interface ButtonConfig {
+  id: string;
+  label: string;
+  value?: string;
+  action?: 'appendAnswer' | 'backspace' | 'clear' | 'toggleSign' | 'parenthesis' | 'calculate';
+  type: 'operator' | 'function' | 'number' | 'equals';
+  icon?: string;
+  span?: number;
+  rowSpan?: number;
 }

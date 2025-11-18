@@ -1,5 +1,4 @@
-// App.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useCalculator } from './hooks/useCalculator';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import Calculator from './components/Calculator';
@@ -8,11 +7,10 @@ import Notification from './components/Notification';
 import ConfirmationDialog from './components/ConfirmationDialog';
 import { HistoryItem } from './types';
 
-// --- استبدال lazy بـ import عادي ---
-import SettingsPanel from './components/SettingsPanel';
-import HistoryPanel from './components/HistoryPanel';
-import SupportPanel from './components/SupportPanel';
-import AboutPanel from './components/AboutPanel';
+const SettingsPanel = lazy(() => import('./components/SettingsPanel'));
+const HistoryPanel = lazy(() => import('./components/HistoryPanel'));
+const SupportPanel = lazy(() => import('./components/SupportPanel'));
+const AboutPanel = lazy(() => import('./components/AboutPanel'));
 
 type ConfirmationState = {
   isOpen: boolean;
@@ -30,49 +28,6 @@ function App() {
   const [notification, setNotification] = useState({ message: '', show: false });
   const [appUpdate, setAppUpdate] = useState<{ available: boolean; registration: ServiceWorkerRegistration | null }>({ available: false, registration: null });
   const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, onConfirm: () => {}, onCancel: () => {}, title: '', message: '' });
-
-  // --- إضافة حالة قفل الدوران ---
-  const [autoRotate, setAutoRotate] = useLocalStorage<boolean>('autoRotate', true);
-
-  // --- تأثير لتطبيق قفل الدوران ---
-  useEffect(() => {
-    let handleOrientationChange: (() => void) | undefined;
-
-    const lockToPortrait = () => {
-      // @ts-ignore
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('portrait').catch(e => console.log('فشل في قفل الاتجاه:', e));
-      }
-    };
-
-    const unlockOrientation = () => {
-      // @ts-ignore
-      if (screen.orientation && screen.orientation.unlock) {
-        screen.orientation.unlock();
-      }
-    };
-
-    if (autoRotate) {
-      unlockOrientation();
-    } else {
-      lockToPortrait();
-      handleOrientationChange = () => {
-        if (screen.orientation && Math.abs(screen.orientation.angle) % 180 !== 0) {
-          lockToPortrait();
-        }
-      };
-      window.addEventListener('orientationchange', handleOrientationChange);
-    }
-
-    return () => {
-      if (handleOrientationChange) {
-        window.removeEventListener('orientationchange', handleOrientationChange);
-      }
-      if (autoRotate) {
-         unlockOrientation();
-      }
-    };
-  }, [autoRotate]); // يتغير عند تغيير autoRotate
 
   const [theme, setTheme] = useLocalStorage<string>('calcTheme_v3', 'system');
   const [fontFamily, setFontFamily] = useLocalStorage<string>('calcFontFamily_v2', 'Tajawal');
@@ -314,46 +269,40 @@ function App() {
         />
       </div>
       <Overlay show={anyPanelOpen} onClick={closeAllPanels} />
-      
-      {/* --- إزالة Suspense --- */}
-      {isSettingsOpen && <SettingsPanel
-        isOpen={isSettingsOpen}
-        onClose={closeAllPanels}
-        settings={calculator.settings}
-        theme={theme}
-        onThemeChange={setTheme}
-        fontFamily={fontFamily} 
-        setFontFamily={setFontFamily}
-        fontScale={fontScale}
-        setFontScale={setFontScale}
-        buttonTextColor={buttonTextColor}
-        setButtonTextColor={setButtonTextColor}
-        onOpenSupport={() => { closeAllPanels(); setIsSupportOpen(true); }}
-        onShowAbout={() => { closeAllPanels(); setIsAboutOpen(true); }}
-        onCheckForUpdates={onCheckForUpdates}
-        // --- تمرير حالة قفل الدوران ---
-        autoRotate={autoRotate}
-        setAutoRotate={setAutoRotate}
-        // --- النهاية ---
-      />}
-      {isHistoryOpen && <HistoryPanel
-        isOpen={isHistoryOpen}
-        onClose={closeAllPanels}
-        history={calculator.history}
-        onClearHistory={handleClearHistory}
-        onHistoryItemClick={(item) => {
-          calculator.actions.loadFromHistory(item.expression);
-          closeAllPanels();
-        }}
-        onExportHistory={(start, end) => handleExport('txt', start, end)}
-        onExportCsvHistory={(start, end) => handleExport('csv', start, end)}
-        onUpdateHistoryItemNote={calculator.actions.updateHistoryItemNote}
-        onDeleteItem={handleDeleteHistoryItem}
-      />}
-      {isSupportOpen && <SupportPanel isOpen={isSupportOpen} onClose={closeAllPanels} />}
-      {isAboutOpen && <AboutPanel isOpen={isAboutOpen} onClose={closeAllPanels} />}
-      {/* --- النهاية --- */}
-      
+      <Suspense fallback={null}>
+        {isSettingsOpen && <SettingsPanel
+          isOpen={isSettingsOpen}
+          onClose={closeAllPanels}
+          settings={calculator.settings}
+          theme={theme}
+          onThemeChange={setTheme}
+          fontFamily={fontFamily} 
+          setFontFamily={setFontFamily}
+          fontScale={fontScale}
+          setFontScale={setFontScale}
+          buttonTextColor={buttonTextColor}
+          setButtonTextColor={setButtonTextColor}
+          onOpenSupport={() => { closeAllPanels(); setIsSupportOpen(true); }}
+          onShowAbout={() => { closeAllPanels(); setIsAboutOpen(true); }}
+          onCheckForUpdates={onCheckForUpdates}
+        />}
+        {isHistoryOpen && <HistoryPanel
+          isOpen={isHistoryOpen}
+          onClose={closeAllPanels}
+          history={calculator.history}
+          onClearHistory={handleClearHistory}
+          onHistoryItemClick={(item) => {
+            calculator.actions.loadFromHistory(item.expression);
+            closeAllPanels();
+          }}
+          onExportHistory={(start, end) => handleExport('txt', start, end)}
+          onExportCsvHistory={(start, end) => handleExport('csv', start, end)}
+          onUpdateHistoryItemNote={calculator.actions.updateHistoryItemNote}
+          onDeleteItem={handleDeleteHistoryItem}
+        />}
+        {isSupportOpen && <SupportPanel isOpen={isSupportOpen} onClose={closeAllPanels} />}
+        {isAboutOpen && <AboutPanel isOpen={isAboutOpen} onClose={closeAllPanels} />}
+      </Suspense>
       <ConfirmationDialog
         isOpen={confirmation.isOpen}
         title={confirmation.title}
