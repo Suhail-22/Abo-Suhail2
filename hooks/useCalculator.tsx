@@ -40,15 +40,18 @@ export const useCalculator = ({ showNotification }: { showNotification: (message
     showTaxPerNumber: false,
   });
 
+  // --- التأكد من أن buttonLayout هو سلسلة صحيحة ---
   const [buttonLayout, setButtonLayout] = useLocalStorage<string>('buttonLayout_v1', 'standard');
   const [maxHistory, setMaxHistory] = useLocalStorage<number>('maxHistory_v1', 100);
 
   // --- تطبيق الإعدادات على الحالة ---
   useEffect(() => {
+    // التأكد من أن layout هو 'standard' أو 'scientific'
+    const validLayout = ['standard', 'scientific'].includes(buttonLayout) ? buttonLayout : 'standard';
     setState(prev => ({
       ...prev,
       taxSettings,
-      buttonLayout,
+      buttonLayout: validLayout, // ← ضمان أن القيمة صحيحة
       maxHistory,
     }));
   }, [taxSettings, buttonLayout, maxHistory]);
@@ -353,7 +356,9 @@ export const useCalculator = ({ showNotification }: { showNotification: (message
     }, []),
     buttonLayout,
     setButtonLayout: useCallback((layout: string) => {
-      setButtonLayout(layout);
+      // التأكد من أن layout هو 'standard' أو 'scientific'
+      const validLayout = ['standard', 'scientific'].includes(layout) ? layout : 'standard';
+      setButtonLayout(validLayout);
     }, []),
     maxHistory,
     setMaxHistory: useCallback((value: number) => {
