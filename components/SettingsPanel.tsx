@@ -151,6 +151,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, settings
           <input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} className="w-5 h-5 accent-[var(--accent-color)]" />
         </label>
         {/* --- إضافة خيار قفل الدوران هنا --- */}
+        {/* --- التصحيح: checked={!autoRotate} - معكوس --- */}
         <label className="flex items-center justify-between text-[var(--text-secondary)] mt-4">
           <span>قفل دوران الشاشة:</span>
           <input
