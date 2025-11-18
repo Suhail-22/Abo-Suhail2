@@ -52,7 +52,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     onOpenSupport, 
     onShowAbout, 
     onCheckForUpdates, 
-    // [NEW] استقبال خصائص قفل الدوران
     isOrientationLocked,
     setIsOrientationLocked
 }) => {
@@ -124,10 +123,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <input type="checkbox" name="showTaxPerNumber" checked={taxSettings.showTaxPerNumber} onChange={handleTaxChange} disabled={!taxSettings.isEnabled} className="ml-3 w-5 h-5 accent-[var(--accent-color)]" />
                 عرض الضريبة فوق كل رقم
             </label>
+            {/* [MODIFIED] تعديل تسمية القسمة على .93 */}
             <select name="mode" value={taxSettings.mode} onChange={handleTaxChange} className="w-full p-2.5 rounded-xl border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] mb-4 text-base">
               <option value="add-15">إضافة 15%</option>
               <option value="extract-custom">استخلاص نسبة مخصصة</option>
-              <option value="divide-93">القسمة على 0.93</option>
+              <option value="divide-93">القسمة على ٠.٩٣</option> 
               <option value="custom">إضافة نسبة مخصصة</option>
             </select>
             {['custom', 'extract-custom'].includes(taxSettings.mode) && (
