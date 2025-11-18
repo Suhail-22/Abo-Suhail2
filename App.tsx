@@ -34,8 +34,7 @@ function App() {
   const [fontScale, setFontScale] = useLocalStorage<number>('calcFontScale_v2', 1);
   const [buttonTextColor, setButtonTextColor] = useLocalStorage<string | null>('calcButtonTextColor_v1', null);
   
-  // ======================================================
-  // [NEW] 🔒 ميزة قفل الدوران (الإعداد سيكون في SettingsPanel لاحقاً)
+  // [MODIFIED] ميزة قفل الدوران
   const [isOrientationLocked, setIsOrientationLocked] = useLocalStorage<boolean>('isOrientationLocked_v1', false);
   
   useEffect(() => {
@@ -45,11 +44,16 @@ function App() {
             screen.orientation.lock('portrait').catch(err => console.error("Failed to lock orientation:", err));
         } else {
             // إلغاء القفل ليعود إلى تلقائي (أفقي/عمودي)
-            screen.orientation.unlock();
+            try {
+                screen.orientation.unlock();
+            } catch (e) {
+                 console.log("Orientation unlock failed, possibly due to browser restrictions.");
+            }
         }
+    } else {
+         // showNotification("قفل الدوران غير مدعوم في متصفحك.")
     }
   }, [isOrientationLocked]);
-  // ======================================================
 
   const showNotification = useCallback((message: string) => {
     setNotification({ message, show: true });
@@ -179,9 +183,6 @@ function App() {
 
   const onCheckForUpdates = useCallback(() => {
     appUpdate.registration?.update().then(() => {
-      // After update(), the state of installing/waiting might not be immediately available.
-      // The 'updatefound' event listener is the more reliable way to detect updates.
-      // For immediate feedback, we can check, but it might not catch the very latest state.
       if (appUpdate.registration?.installing) {
         showNotification("جاري البحث عن تحديثات...");
       } else if (appUpdate.registration?.waiting) {
@@ -202,7 +203,6 @@ function App() {
       }
   };
   
-  // ======================================================
   // [MODIFIED] تعديل وظيفة التصدير لإضافة BOM لـ TXT (لإصلاح مشكلة التشفير)
   const createExportContent = useCallback((history: any[], format: 'txt' | 'csv') => {
     const getTaxModeLabel = (mode?: string, rate?: number) => {
@@ -216,7 +216,7 @@ function App() {
         }
     };
     
-    // علامة الترتيب البايتية (BOM) لضمان UTF-8 في برامج ويندوز
+    // علامة الترتيب البايتية (BOM) لضمان UTF-8
     const BOM = '\uFEFF'; 
 
     if (format === 'txt') {
@@ -240,14 +240,13 @@ function App() {
             item.date, item.time, item.expression, item.result,
             getTaxModeLabel(item.taxMode, item.taxRate), item.taxRate, item.taxResult, item.notes
         ].map(escapeCsvCell).join(',')).join('\n');
-        // BOM موجودة بالفعل في النسخة الأصلية للـ CSV
         return BOM + headers + '\n' + rows;
     }
     return '';
   }, []);
 
   const handleExport = useCallback((format: 'txt' | 'csv', startDate: string, endDate: string) => {
-      const filteredHistory = calculator.history; // Filtering logic can be added here if needed
+      const filteredHistory = calculator.history; 
 
       if (filteredHistory.length === 0) {
           showNotification("لا يوجد سجل للتصدير.");
@@ -255,7 +254,6 @@ function App() {
       }
 
       const content = createExportContent(filteredHistory, format);
-      // التشفير utf-8 تم تحديده في البنية
       const mimeType = format === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain;charset=utf-8'; 
       const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
@@ -271,11 +269,9 @@ function App() {
       closeAllPanels();
   }, [calculator.history, closeAllPanels, showNotification, createExportContent]);
   
-  // ======================================================
-  // [NEW] إضافة وظيفة المشاركة (Share)
+  // [NEW] وظيفة المشاركة (Share)
   
   const createShareContent = useCallback((history: HistoryItem[], type: 'full' | 'day', date?: string) => {
-    // دالة مساعدة لتنسيق عنصر واحد
     const formatItem = (item: HistoryItem) => 
         `${item.expression} = ${item.result}` + (item.taxResult ? ` (مع ضريبة: ${item.taxResult})` : '');
 
@@ -289,7 +285,6 @@ function App() {
     }
 
     if (type === 'day' && date) {
-        // يتم استخدام التاريخ كما تم تمريره من HistoryPanel
         const dayHistory = history.filter(item => item.date === date);
         const header = `--- سجل عمليات يوم: ${date} ---\n`;
         const content = dayHistory.map(item => `\n${item.time}: ${formatItem(item)}`).join('');
@@ -308,8 +303,6 @@ function App() {
     }
 
     let historyToShare: HistoryItem[] = calculator.history;
-    
-    // التاريخ يكون بصيغة 'YYYY/MM/DD' في السجل، لذا نستخدمه كما هو للمقارنة
     const dateToFilter = date; 
 
     if (type === 'day' && dateToFilter) {
@@ -332,7 +325,6 @@ function App() {
         });
         showNotification("تمت مشاركة السجل بنجاح!");
     } catch (error) {
-        // يتم تجاهل خطأ الإلغاء
         if ((error as Error).name !== 'AbortError') {
              console.error('Sharing failed:', error);
              showNotification("فشلت عملية المشاركة.");
@@ -364,7 +356,7 @@ function App() {
           entryCount={calculator.entryCount}
         />
       </div>
-      <Overlay show={anyPanelOpen} onClick={closeAllPanels} />
+      <Overlay show={anyPanelOpen} onClick={closeAllPanels} /> 
       <Suspense fallback={null}>
         {isSettingsOpen && <SettingsPanel
           isOpen={isSettingsOpen}
@@ -378,7 +370,7 @@ function App() {
           setFontScale={setFontScale}
           buttonTextColor={buttonTextColor}
           setButtonTextColor={setButtonTextColor}
-          // [NEW] إضافة خاصية قفل الدوران
+          // [MODIFIED] تمرير خصائص قفل الدوران
           isOrientationLocked={isOrientationLocked} 
           setIsOrientationLocked={setIsOrientationLocked} 
           onOpenSupport={() => { closeAllPanels(); setIsSupportOpen(true); }}
@@ -396,7 +388,7 @@ function App() {
           }}
           onExportHistory={(start, end) => handleExport('txt', start, end)}
           onExportCsvHistory={(start, end) => handleExport('csv', start, end)}
-          // [NEW] إضافة خصائص المشاركة
+          // [MODIFIED] تمرير خصائص المشاركة
           onShareFullHistory={() => handleShare('full')}
           onShareDailyHistory={(date) => handleShare('day', date)}
           onUpdateHistoryItemNote={calculator.actions.updateHistoryItemNote}
