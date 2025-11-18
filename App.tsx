@@ -32,6 +32,8 @@ function App() {
   const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, onConfirm: () => {}, onCancel: () => {}, title: '', message: '' });
 
   // --- إضافة حالة قفل الدوران ---
+  // true = السماح بالدوران (الوضع الافتراضي)
+  // false = قفل الدوران
   const [autoRotate, setAutoRotate] = useLocalStorage<boolean>('autoRotate', true);
 
   // --- تأثير لتطبيق قفل الدوران ---
@@ -52,23 +54,28 @@ function App() {
       }
     };
 
+    // --- منطق التبديل ---
     if (autoRotate) {
+      // إذا كان autoRotate = true، السماح بالدوران
       unlockOrientation();
     } else {
+      // إذا كان autoRotate = false، قفل الدوران
       lockToPortrait();
       handleOrientationChange = () => {
-        // --- لا نستخدم CSS للتدوير، فقط نحاول قفل الاتجاه ---
+        // مراقبة التغييرات فقط إذا كان القفل مفعّل
         if (screen.orientation && Math.abs(screen.orientation.angle) % 180 !== 0) {
-          lockToPortrait();
+          lockToPortrait(); // إذا تحولت إلى أفقي، اعد التحويل إلى رأسي
         }
       };
       window.addEventListener('orientationchange', handleOrientationChange);
     }
 
+    // --- تنظيف ---
     return () => {
       if (handleOrientationChange) {
         window.removeEventListener('orientationchange', handleOrientationChange);
       }
+      // عند تغيير الحالة أو إلغاء تحميل المكون، إلغاء القفل إذا كان مسموحًا
       if (autoRotate) {
          unlockOrientation();
       }
