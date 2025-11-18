@@ -1,4 +1,3 @@
-// HistoryPanel.tsx
 import React, { useState, useMemo } from 'react';
 import { HistoryItem } from '../types';
 
@@ -30,16 +29,6 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
     setEditingItem(null);
   };
 
-  // --- حساب عدد العمليات اليومية ---
-  const today = new Date().toLocaleDateString('ar-EG');
-  const dailyCount = useMemo(() => {
-    return history.filter(item => item.date === today).length;
-  }, [history, today]);
-
-  // --- حساب العدد الإجمالي ---
-  const totalCount = history.length;
-
-  // --- التجميع والتصفية ---
   const groupedAndFilteredHistory = useMemo(() => {
     const dailyTotals: { [date: string]: number } = {};
     history.forEach(item => {
@@ -85,57 +74,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
     });
   }, [history, searchTerm]);
 
-  // --- دالة مشاركة لليوم ---
-  const shareDay = (date: string) => {
-    const dayItems = history.filter(item => item.date === date);
-    const textToShare = `سجل عمليات اليوم (${date}):\n\n` + 
-      dayItems.map(item => `${item.expression} = ${item.result}`).join('\n');
-
-    if (navigator.share) {
-        try {
-            navigator.share({ title: `سجل اليوم ${date}`, text: textToShare });
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
-                console.error('Error sharing:', error);
-                navigator.clipboard.writeText(textToShare);
-                alert('فشلت المشاركة، تم النسخ إلى الحافظة!');
-            }
-        }
-    } else {
-        navigator.clipboard.writeText(textToShare);
-        alert('تم النسخ إلى الحافظة!');
-    }
-  };
-
-  // --- دالة مشاركة للسجل الكامل ---
-  const shareAllHistory = () => {
-    const textToShare = `سجل عمليات الآلة الحاسبة:\n\n` +
-      history.map(item => `${item.date} - ${item.time}: ${item.expression} = ${item.result}`).join('\n');
-
-    if (navigator.share) {
-        try {
-            navigator.share({ title: 'سجل العمليات', text: textToShare });
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
-                console.error('Error sharing:', error);
-                navigator.clipboard.writeText(textToShare);
-                alert('فشلت المشاركة، تم النسخ إلى الحافظة!');
-            }
-        }
-    } else {
-        navigator.clipboard.writeText(textToShare);
-        alert('تم النسخ إلى الحافظة!');
-    }
-  };
-
   return (
     <div className={`absolute top-0 bottom-0 left-0 w-[320px] max-w-[85vw] bg-[var(--bg-panel)] text-[var(--text-primary)] z-50 p-5 shadow-2xl overflow-y-auto border-r-2 border-[var(--border-primary)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform ${isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 pointer-events-none'}`}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-[var(--accent-color)] text-2xl font-bold">{`السجل (${totalCount})`} 📜</h3>
-        <div className="flex flex-col items-end">
-          <span className="text-xs text-[var(--text-secondary)]">اليوم:</span>
-          <span className="text-sm font-bold text-green-400">{dailyCount}</span>
-        </div>
+        <h3 className="text-[var(--accent-color)] text-2xl font-bold">{`السجل (${history.length})`} 📜</h3>
         <button onClick={onClose} className="text-2xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">✕</button>
       </div>
       <div className="mb-4">
@@ -154,8 +96,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
         ) : (
           groupedAndFilteredHistory.map(({ date, items, total }, groupIndex) => (
             <div key={date}>
-              {/* --- جعل الخط الفاصل أكثر وضوحًا --- */}
-              <div className={`flex justify-between items-center py-2 ${groupIndex > 0 ? 'mt-3 border-t-2 border-[var(--accent-color)]' : ''}`}>
+              <div className={`flex justify-between items-center py-2 ${groupIndex > 0 ? 'mt-3 border-t border-[var(--border-secondary)]' : ''}`}>
                 <div className="flex items-baseline gap-2">
                     <span className="text-base font-bold text-green-400">
                         الإجمالي: {total.toLocaleString('en-US', { maximumFractionDigits: 2, useGrouping: false })}
@@ -165,13 +106,6 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
                     </span>
                 </div>
                 <h4 className="text-sm font-bold text-[var(--text-secondary)]">{date}</h4>
-                {/* --- إضافة زر مشاركة لكل يوم --- */}
-                <button
-                  onClick={() => shareDay(date)}
-                  className="ml-2 text-xs text-blue-500 hover:underline"
-                >
-                  📤
-                </button>
               </div>
               <div className="flex flex-col gap-2">
                 {items.map((item) => {
@@ -228,16 +162,6 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
             </div>
           ))
         )}
-      </div>
-
-      {/* --- إضافة زر مشاركة للسجل الكامل --- */}
-      <div className="mt-4 flex justify-center">
-        <button
-          onClick={shareAllHistory}
-          className="w-full py-2 rounded-xl bg-gradient-to-br from-blue-600/50 to-blue-700/60 text-white border border-blue-400/80 font-bold text-lg shadow-[0_5px_12px_rgba(0,0,0,0.35),0_0_18px_rgba(100,220,100,0.35)] mt-3 hover:from-blue-600/60"
-        >
-          📤 مشاركة السجل الكامل
-        </button>
       </div>
     </div>
   );

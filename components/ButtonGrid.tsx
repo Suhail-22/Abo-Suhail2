@@ -1,99 +1,71 @@
-// ButtonGrid.tsx
 import React from 'react';
+import Button from './Button';
+import Icon from './Icon';
+import { ButtonConfig } from '../types';
 
 interface ButtonGridProps {
-  onAppend: (char: string) => void;
+  onAppend: (value: string) => void;
   onClear: () => void;
   onBackspace: () => void;
   onCalculate: () => void;
   onToggleSign: () => void;
   onParenthesis: () => void;
   onAppendAnswer: () => void;
-  layout: string;
+  layout: ButtonConfig[];
 }
 
-const ButtonGrid: React.FC<ButtonGridProps> = ({ 
-  onAppend, 
-  onClear, 
-  onBackspace, 
-  onCalculate, 
-  onToggleSign, 
-  onParenthesis, 
-  onAppendAnswer, 
-  layout 
-}) => {
-  // --- تعريف الأزرار حسب التخطيط ---
-  const standardButtons = [
-    { type: 'function', label: 'AC', onClick: onClear },
-    { type: 'function', label: '±', onClick: onToggleSign },
-    { type: 'function', label: '%', onClick: () => onAppend('%') },
-    { type: 'operator', label: '÷', onClick: () => onAppend('÷') },
-    { type: 'number', label: '7', onClick: () => onAppend('7') },
-    { type: 'number', label: '8', onClick: () => onAppend('8') },
-    { type: 'number', label: '9', onClick: () => onAppend('9') },
-    { type: 'operator', label: '×', onClick: () => onAppend('×') },
-    { type: 'number', label: '4', onClick: () => onAppend('4') },
-    { type: 'number', label: '5', onClick: () => onAppend('5') },
-    { type: 'number', label: '6', onClick: () => onAppend('6') },
-    { type: 'operator', label: '-', onClick: () => onAppend('-') },
-    { type: 'number', label: '1', onClick: () => onAppend('1') },
-    { type: 'number', label: '2', onClick: () => onAppend('2') },
-    { type: 'number', label: '3', onClick: () => onAppend('3') },
-    { type: 'operator', label: '+', onClick: () => onAppend('+') },
-    { type: 'number', label: '0', onClick: () => onAppend('0') },
-    { type: 'number', label: '00', onClick: () => onAppend('00') },
-    { type: 'number', label: '000', onClick: () => onAppend('000') },
-    { type: 'equals', label: '=', onClick: onCalculate },
-  ];
-
-  const scientificButtons = [
-    ...standardButtons,
-    { type: 'function', label: '(', onClick: onParenthesis },
-    { type: 'function', label: ')', onClick: onParenthesis },
-    { type: 'function', label: 'Ans', onClick: onAppendAnswer },
-    { type: 'function', label: '←', onClick: onBackspace },
-  ];
-
-  // --- اختيار الأزرار بناءً على التخطيط ---
-  const buttons = layout === 'scientific' ? scientificButtons : standardButtons;
-
-  // --- دالة لإنشاء زر ---
-  const renderButton = (button: any, index: number) => {
-    let className = 'w-full h-12 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-200 ';
-    switch (button.type) {
-      case 'number':
-        className += 'bg-[var(--bg-number)] text-[var(--text-number)] hover:bg-[var(--bg-number-light)]';
-        break;
-      case 'operator':
-        className += 'bg-[var(--bg-operator)] text-[var(--text-operator)] hover:bg-[var(--bg-operator-light)]';
-        break;
-      case 'function':
-        className += 'bg-[var(--bg-function)] text-[var(--text-function)] hover:bg-[var(--bg-function-light)]';
-        break;
-      case 'equals':
-        className += 'bg-[var(--accent-color)] text-[var(--accent-color-contrast)] hover:bg-[var(--accent-color-light)]';
-        break;
-      default:
-        className += 'bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)]';
-    }
-
-    return (
-      <button
-        key={index}
-        onClick={button.onClick}
-        className={className}
-        aria-label={button.label}
-      >
-        {button.label}
-      </button>
-    );
-  };
-
+const ButtonGrid: React.FC<ButtonGridProps> = ({ onAppend, onClear, onBackspace, onCalculate, onToggleSign, onParenthesis, onAppendAnswer, layout }) => {
   return (
-    <div className="grid grid-cols-4 gap-2">
-      {Array.isArray(buttons) ? buttons.map(renderButton) : <div>Loading...</div>}
+    <div className="grid grid-cols-5 gap-3">
+      {layout.map((btn) => {
+        const handleClick = () => {
+          if (btn.action === 'clear') onClear();
+          else if (btn.action === 'backspace') onBackspace();
+          else if (btn.action === 'calculate') onCalculate();
+          else if (btn.action === 'toggleSign') onToggleSign();
+          else if (btn.action === 'parenthesis') onParenthesis();
+          else if (btn.action === 'appendAnswer') onAppendAnswer();
+          else if (btn.value) onAppend(btn.value);
+        };
+
+        let style: React.CSSProperties = {};
+        let className = '';
+
+        if (btn.type === 'number') {
+            style.background = 'var(--button-number-bg)';
+            style.color = 'var(--button-text-color-custom, var(--text-primary))';
+        }
+        if (btn.type === 'operator' || btn.type === 'function') {
+            style.background = 'var(--button-function-bg)';
+            style.color = 'var(--button-text-color-custom, var(--button-function-text-color, var(--accent-color)))';
+        }
+        if (btn.type === 'equals') {
+            style.background = 'var(--accent-equals-bg)';
+            style.color = 'var(--accent-equals-text)';
+            className += ' animate-pulse-special';
+        }
+        if (btn.span) {
+            if (btn.span === 2) className += ' col-span-2';
+            if (btn.span === 3) className += ' col-span-3';
+            if (btn.span === 4) className += ' col-span-4';
+        }
+        if (btn.rowSpan) {
+            if (btn.rowSpan === 2) className += ' row-span-2';
+        }
+        
+        return (
+          <Button
+            key={btn.id}
+            onClick={handleClick}
+            className={className}
+            style={style}
+          >
+            {btn.icon ? <Icon name={btn.icon} className='w-7 h-7' /> : btn.label}
+          </Button>
+        );
+      })}
     </div>
   );
 };
 
-export default ButtonGrid;
+export default React.memo(ButtonGrid);

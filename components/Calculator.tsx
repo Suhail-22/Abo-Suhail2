@@ -1,4 +1,5 @@
-// components/Calculator.tsx
+
+
 import React from 'react';
 import { useCalculator } from '../hooks/useCalculator';
 import Header from './Header';
@@ -17,11 +18,6 @@ interface CalculatorProps {
 const Calculator: React.FC<CalculatorProps> = ({ calculator, onToggleSettings, onToggleHistory, onShare, entryCount }) => {
   const { taxSettings } = calculator.settings;
   const { input, error, aiSuggestion, actions, lastExpression } = calculator;
-
-  // --- حساب عدد العمليات اليوم ---
-  const today = new Date().toLocaleDateString('ar-EG'); // تنسيق DD/MM/YYYY
-  const dailyCount = calculator.history.filter(item => item.date === today).length;
-  // --- النهاية ---
 
   const handleShare = async () => {
     const expression = calculator.isCalculationExecuted ? calculator.history[0]?.expression : input;
@@ -67,11 +63,8 @@ const Calculator: React.FC<CalculatorProps> = ({ calculator, onToggleSettings, o
           onToggleSettings={onToggleSettings}
           onShare={handleShare}
           onToggleHistory={onToggleHistory}
-          historyCount={calculator.history.length} // هذا هو العدد الإجمالي
+          historyCount={calculator.history.length}
           entryCountDisplay={entryCount}
-          // --- تمرير عدد العمليات اليومية ---
-          dailyCount={dailyCount}
-          // --- النهاية ---
         />
         <div id="calculator-main-content">
           <div id="calculator-display-wrapper">

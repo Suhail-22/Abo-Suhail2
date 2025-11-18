@@ -1,5 +1,6 @@
-// Header.tsx
+
 import React from 'react';
+import Icon from './Icon';
 import { TaxSettings } from '../types';
 
 interface HeaderProps {
@@ -7,100 +8,57 @@ interface HeaderProps {
   onToggleSettings: () => void;
   onShare: () => void;
   onToggleHistory: () => void;
+  historyCount: number;
   entryCountDisplay: number;
-  dailyCount: number;
 }
 
-const getTaxModeLabel = (taxSettings: TaxSettings): string => {
-  if (!taxSettings.isEnabled) return '';
-  switch (taxSettings.mode) {
-    case 'add-15':
-      return 'ضريبة: +15%';
-    case 'extract-custom':
-      return `ضريبة: -${taxSettings.rate}%`;
-    case 'divide-93':
-      return 'ضريبة: ÷0.93';
-    case 'custom':
-      return `ضريبة: +${taxSettings.rate}%`;
-    default:
-      return '';
-  }
-};
+const HeaderButton: React.FC<{ onClick: () => void; children: React.ReactNode; 'aria-label': string }> = ({ onClick, children, 'aria-label': ariaLabel }) => (
+  <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="w-12 h-12 flex items-center justify-center rounded-2xl bg-[var(--bg-inset)] text-[var(--text-secondary)] transition-colors duration-200 hover:bg-[var(--bg-inset-light)] hover:text-[var(--text-primary)]"
+  >
+    {children}
+  </button>
+);
 
-const Header: React.FC<HeaderProps> = ({ 
-  taxSettings, 
-  onToggleSettings, 
-  onShare, 
-  onToggleHistory, 
-  entryCountDisplay, 
-  dailyCount 
-}) => {
-  const taxLabel = getTaxModeLabel(taxSettings);
+const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare, onToggleHistory, historyCount, entryCountDisplay }) => {
+  const { isEnabled, rate, mode } = taxSettings;
 
-  // --- دالة لإنشاء عنصر رمز مع عدد ---
-  const IconWithBadge = ({ icon, count }: { icon: string; count: number }) => (
-    <div className="relative inline-flex">
-      <span className="text-lg">{icon}</span>
-      {count > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[0.6rem] rounded-full h-4 w-4 flex items-center justify-center shadow-md animate-fade-in-down">
-          {count}
-        </span>
-      )}
-    </div>
-  );
+  const getTaxRateLabel = () => {
+    if (!isEnabled) return '---';
+    const displayRate = rate || 0;
+    switch (mode) {
+      case 'add-15': return '+15%';
+      case 'divide-93': return 'مقسوم على 0.93';
+      case 'custom': return `+${displayRate}%`;
+      case 'extract-custom': return `-${displayRate}%`;
+      default: return `${displayRate}%`;
+    }
+  };
 
   return (
-    <div className="flex flex-col w-full">
-      {/* --- شريط عرض الضريبة --- */}
-      {taxLabel && (
-        <div className="flex justify-center mb-1">
-          <span className="text-xs font-bold text-orange-400 animate-fade-in-down">
-            {taxLabel}
-          </span>
+    <div className="flex justify-between items-center p-3 rounded-3xl mb-4 bg-[var(--bg-header)] border border-[var(--border-primary)] backdrop-blur-sm">
+      <HeaderButton onClick={onShare} aria-label="مشاركة النتيجة"><Icon name='share' /></HeaderButton>
+      
+      <div className="flex items-center gap-2 flex-shrink min-w-0">
+        <div className={`text-sm py-1 px-2.5 rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] whitespace-nowrap transition-opacity duration-300 truncate ${isEnabled ? 'opacity-100' : 'opacity-60'}`}>
+          الضريبة: <span className="font-bold text-[var(--text-primary)]">{getTaxRateLabel()}</span>
         </div>
-      )}
+      </div>
 
-      {/* --- شريط الأزرار (الترتيب النهائي) --- */}
-      <div className="flex justify-between items-center px-1">
-        
-        {/* --- الجانب الأيسر: الإعدادات ← الإدخالات --- */}
-        <div className="flex items-center gap-3">
-          {/* --- زر الإعدادات --- */}
-          <button
-            onClick={onToggleSettings}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-            aria-label="الإعدادات"
-          >
-            ⚙️
-          </button>
-
-          {/* --- الإدخالات --- */}
-          <IconWithBadge icon="🔢" count={entryCountDisplay} />
-        </div>
-
-        {/* --- الجانب الأيمن: السجل ← المشاركة --- */}
-        <div className="flex items-center gap-2">
-          
-          {/* --- السجل مع العدد --- */}
-          <div className="relative">
-            <button
-              onClick={onToggleHistory}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-              aria-label="فتح السجل"
-            >
-              <IconWithBadge icon="📜" count={dailyCount} />
-            </button>
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-[var(--bg-inset)] text-[var(--text-secondary)]" aria-label="عدد الإدخالات">
+              <Icon name='entries' />
           </div>
-
-          {/* --- مشاركة --- */}
-          <button
-            onClick={onShare}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-inset)] text-[var(--text-secondary)] hover:bg-[var(--bg-inset-light)] transition-all duration-200"
-            aria-label="مشاركة"
-          >
-            📤
-          </button>
+          {entryCountDisplay > 0 && <span className="absolute -top-1 -right-1.5 bg-blue-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center pointer-events-none">{entryCountDisplay > 99 ? '99+' : entryCountDisplay}</span>}
         </div>
+        <div className="relative">
+          <HeaderButton onClick={onToggleHistory} aria-label="فتح السجل"><Icon name='history' /></HeaderButton>
+          {historyCount > 0 && <span className="absolute -top-1 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center pointer-events-none">{historyCount > 99 ? '99+' : historyCount}</span>}
+        </div>
+        <HeaderButton onClick={onToggleSettings} aria-label="فتح الإعدادات"><Icon name='settings' /></HeaderButton>
       </div>
     </div>
   );
