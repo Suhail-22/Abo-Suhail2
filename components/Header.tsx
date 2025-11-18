@@ -29,7 +29,7 @@ const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare,
     const displayRate = rate || 0;
     switch (mode) {
       case 'add-15': return '+15%';
-      case 'divide-93': return '/0.93'; // [MODIFIED] تسمية مختصرة
+      case 'divide-93': return '/0.93'; 
       case 'custom': return `+${displayRate}%`;
       case 'extract-custom': return `-${displayRate}%`;
       default: return `${displayRate}%`;
@@ -50,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare,
   const historyButtonWithBadge = (
     <div className="relative">
       <HeaderButton onClick={onToggleHistory} aria-label="فتح السجل"><Icon name='history' /></HeaderButton>
-      {historyCount > 0 && <span className="absolute -top-1 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center pointer-events-none">{historyCount > 99 ? '99+' : historyCount}</span>}
+      {historyCount > 0 && <span className="absolute -top-1 -right-1.5 bg-red-500/80 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center pointer-events-none">{historyCount > 99 ? '99+' : historyCount}</span>}
     </div>
   );
 
@@ -58,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare,
     <div className="flex justify-between items-center p-3 rounded-3xl mb-4 bg-[var(--bg-header)] border border-[var(--border-primary)] backdrop-blur-sm">
       
       {/* === الجانب الأيمن (Right Group) === */}
-      {/* الترتيب الجديد: إعدادات (1) + عدد إدخالات (2) */}
+      {/* الترتيب: إعدادات (1) + عدد إدخالات (2) */}
       <div className="flex items-center gap-2 flex-shrink-0">
         
         {/* 1. Settings Button */}
@@ -78,14 +78,14 @@ const Header: React.FC<HeaderProps> = ({ taxSettings, onToggleSettings, onShare,
       </div>
 
       {/* === الجانب الأيسر (Left Group) === */}
-      {/* الترتيب الجديد: مشاركة (1) + سجل (2) */}
+      {/* الترتيب الجديد: سجل (1) + مشاركة (2) */}
       <div className="flex items-center gap-2 flex-shrink-0">
         
-        {/* 1. Share button */}
-        <HeaderButton onClick={onShare} aria-label="مشاركة النتيجة"><Icon name='share' /></HeaderButton>
-
-        {/* 2. History Button/Badge */}
+        {/* 1. History Button/Badge (الآن هو الأول) */}
         {historyButtonWithBadge}
+
+        {/* 2. Share button (الآن هو الثاني) */}
+        <HeaderButton onClick={onShare} aria-label="مشاركة النتيجة"><Icon name='share' /></HeaderButton>
       </div>
 
     </div>
