@@ -33,46 +33,31 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
   const handleExport = (exportFunc: (start: string, end: string) => void) => {
     exportFunc(startDate, endDate);
   };
-
-  const handleEditSave = () => {
-    if (!editingItem) return;
-    onUpdateHistoryItemNote(editingItem.id, editingItem.note);
-    setEditingItem(null);
-  };
-
-  // [MODIFIED] تعديل منطق التجميع والتصفية
-  const groupedAndFilteredHistory = useMemo(() => {
-    if (history.length === 0) return {};
-
-    let filteredHistory = history;
+  
+  const filteredAndGroupedHistory: GroupedHistory = useMemo(() => {
+    let filtered = history;
 
     // 1. تصفية حسب البحث
-    if (searchTerm.trim() !== '') {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      filteredHistory = filteredHistory.filter(item =>
-        item.expression.toLowerCase().includes(lowerCaseSearchTerm) ||
-        item.result.toLowerCase().includes(lowerCaseSearchTerm) ||
-        item.notes?.toLowerCase().includes(lowerCaseSearchTerm)
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.expression.toLowerCase().includes(lowerSearchTerm) || 
+        item.result.toLowerCase().includes(lowerSearchTerm) ||
+        (item.notes && item.notes.toLowerCase().includes(lowerSearchTerm))
       );
     }
-
-    // 2. تصفية حسب التاريخ (إذا كان مطلوباً)
-    if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        // لضمان شمول اليوم الأخير بالكامل
-        end.setDate(end.getDate() + 1); 
-        filteredHistory = filteredHistory.filter(item => {
-            // تحويل التاريخ في السجل ليكون متوافقاً مع مقارنة JS
-            const itemDate = new Date(item.date.replace(/\//g, '-')); 
-            return itemDate >= start && itemDate < end;
-        });
+    
+    // 2. تصفية حسب التاريخ
+    if (startDate) {
+      filtered = filtered.filter(item => item.date >= startDate);
+    }
+    if (endDate) {
+      filtered = filtered.filter(item => item.date <= endDate);
     }
 
-
-    // 3. التجميع حسب التاريخ
-    const grouped: GroupedHistory = filteredHistory.reduce((acc, item) => {
-      const date = item.date; // التاريخ يكون بالصيغة 'YYYY/MM/DD'
+    // 3. تجميع حسب التاريخ (Group By Date)
+    return filtered.reduce((acc, item) => {
+      const date = item.date;
       if (!acc[date]) {
         acc[date] = [];
       }
@@ -80,236 +65,176 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
       return acc;
     }, {} as GroupedHistory);
 
-    return grouped;
-  }, [history, startDate, endDate, searchTerm]);
+  }, [history, searchTerm, startDate, endDate]);
+  
+  // يتم ترتيب المفاتيح (التواريخ) تنازليًا
+  const sortedDates = useMemo(() => Object.keys(filteredAndGroupedHistory).sort((a, b) => b.localeCompare(a)), [filteredAndGroupedHistory]);
 
-  // للحصول على مفاتيح التاريخ بترتيب عكسي (الأحدث أولاً)
-  const sortedDates = useMemo(() => {
-    return Object.keys(groupedAndFilteredHistory).sort((a, b) => {
-        // تحويل 'YYYY/MM/DD' إلى تاريخ للمقارنة
-        const dateA = new Date(a.replace(/\//g, '-')).getTime();
-        const dateB = new Date(b.replace(/\//g, '-')).getTime();
-        return dateB - dateA; // تنازلي
-    });
-  }, [groupedAndFilteredHistory]);
-
-
-  const getTaxModeLabel = (mode?: string, rate?: number) => {
-    if (!mode) return "غير مفعلة";
-    switch (mode) {
-        case 'add-15': return "إضافة 15%";
-        case 'divide-93': return "القسمة على 0.93";
-        case 'custom': return `إضافة مخصص ${rate}%`;
-        case 'extract-custom': return `استخلاص مخصص ${rate}%`;
-        default: return "غير معروف";
+  const totalFilteredEntries = useMemo(() => Object.values(filteredAndGroupedHistory).flat().length, [filteredAndGroupedHistory]);
+  
+  const handleSaveNote = (id: number, currentNote: string) => {
+    if (editingItem && editingItem.id === id) {
+        onUpdateHistoryItemNote(id, currentNote);
+        setEditingItem(null);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-30 flex justify-center items-end md:items-center p-4">
-      {/* Panel Container */}
-      <div className={`
-        bg-[var(--bg-panel)] rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-lg h-[90%] md:h-[90%]
-        transform transition-all duration-300 ease-out 
-        ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
-        flex flex-col
-      `}>
-        {/* Header Section */}
-        <div className="flex justify-between items-center p-4 border-b border-[var(--border-secondary)] sticky top-0 bg-[var(--bg-panel)] z-10">
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">سجل العمليات</h2>
-          <button onClick={onClose} aria-label="إغلاق السجل" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-            <Icon name="close" className="w-6 h-6" />
-          </button>
-        </div>
+    // ⚠️ تم تغيير z-index إلى z-[60] لضمان الظهور فوق الـ Overlay (z-50)
+    <div className={`absolute top-0 bottom-0 right-0 w-[320px] max-w-[85vw] bg-[var(--bg-panel)] text-[var(--text-primary)] z-[60] p-5 shadow-2xl overflow-y-auto border-l-2 border-[var(--border-primary)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'}`}>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-[var(--accent-color)] text-2xl font-bold">📖 سجل العمليات ({totalFilteredEntries})</h3>
+        <button onClick={onClose} className="text-2xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+      </div>
 
-        {/* Action Section */}
-        <div className="p-4 flex flex-wrap gap-2 justify-between items-center border-b border-[var(--border-secondary)] bg-[var(--bg-panel)] sticky top-[56px] z-10">
-            <div className='flex gap-2 items-center'>
-                {/* زر مسح السجل */}
-                <button 
-                    onClick={onClearHistory} 
-                    aria-label="مسح السجل كاملاً" 
-                    className="flex items-center gap-1 p-2 rounded-lg text-sm font-medium bg-red-600/10 text-red-500 hover:bg-red-600/20 transition-colors"
-                >
-                    <Icon name="trash" className="w-5 h-5" />
-                    مسح
-                </button>
-                {/* [NEW] زر مشاركة السجل الكامل */}
-                <button 
-                    onClick={onShareFullHistory} 
-                    aria-label="مشاركة السجل كاملاً" 
-                    className="flex items-center gap-1 p-2 rounded-lg text-sm font-medium bg-green-600/10 text-green-500 hover:bg-green-600/20 transition-colors"
-                >
-                    <Icon name="share" className="w-5 h-5" />
-                    مشاركة
-                </button>
-            </div>
-            
-            <div className='flex gap-2'>
-                {/* أزرار التصدير - لا تزال تستخدم وظيفة التصدير القديمة */}
-                <button 
-                    onClick={() => handleExport(onExportHistory)} 
-                    aria-label="تصدير السجل إلى ملف نصي (TXT)" 
-                    className="flex items-center gap-1 p-2 rounded-lg text-sm font-medium bg-[var(--bg-inset)] text-[var(--text-primary)] hover:bg-[var(--bg-inset-hover)] border border-[var(--border-secondary)] transition-colors"
-                >
-                    <Icon name="file-text" className="w-5 h-5" />
-                    TXT
-                </button>
-                <button 
-                    onClick={() => handleExport(onExportCsvHistory)} 
-                    aria-label="تصدير السجل إلى ملف CSV" 
-                    className="flex items-center gap-1 p-2 rounded-lg text-sm font-medium bg-[var(--bg-inset)] text-[var(--text-primary)] hover:bg-[var(--bg-inset-hover)] border border-[var(--border-secondary)] transition-colors"
-                >
-                    <Icon name="file-csv" className="w-5 h-5" />
-                    CSV
-                </button>
-            </div>
-        </div>
-
-        {/* Search and Filter Section */}
-        <div className="p-4 flex flex-col gap-3 border-b border-[var(--border-secondary)] bg-[var(--bg-panel)] sticky top-[108px] z-10">
-            {/* Search Input */}
-            <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="ابحث في العمليات والملاحظات..."
-                className="w-full p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-            />
-            {/* Date Range Filter - أبقيناها بسيطة دون تطبيق التصفية التلقائية في الواجهة */}
-            {/* <div className="flex gap-2">
-                <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="flex-1 p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-                />
-                <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="flex-1 p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-                />
-            </div> */}
-        </div>
+      <div className="flex flex-col gap-3 mb-6">
+        <input 
+            type="text" 
+            placeholder="البحث في السجل..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2.5 rounded-xl border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] text-base"
+        />
         
-        {/* History List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {history.length === 0 ? (
-                <p className="text-center text-[var(--text-secondary)] mt-8">
-                    لا توجد عمليات مسجلة حتى الآن.
-                </p>
-            ) : sortedDates.length === 0 ? (
-                 <p className="text-center text-[var(--text-secondary)] mt-8">
-                    لا توجد نتائج مطابقة لفلتر البحث.
-                </p>
-            ) : (
-                <div className="space-y-6">
-                    {sortedDates.map(date => (
-                        <div key={date} className="history-day-group">
-                            <div className="sticky top-0 -mt-4 pt-4 mb-2 flex justify-between items-center bg-[var(--bg-panel)] z-10 border-b border-[var(--border-secondary)] pb-2">
-                                <h3 className="text-lg font-semibold text-[var(--accent-color)]">
-                                    {date} ({groupedAndFilteredHistory[date].length} عملية)
-                                </h3>
-                                {/* [NEW] زر مشاركة عمليات اليوم */}
-                                <button 
-                                    onClick={() => onShareDailyHistory(date)} 
-                                    aria-label={`مشاركة عمليات يوم ${date}`} 
-                                    className="flex items-center gap-1 p-1 rounded-lg text-xs font-medium bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 transition-colors"
-                                >
-                                    <Icon name="share" className="w-4 h-4" />
-                                    مشاركة اليوم
-                                </button>
-                            </div>
-                            <div className='space-y-3'>
-                                {groupedAndFilteredHistory[date].map(item => (
-                                    <div key={item.id} className="p-3 rounded-xl bg-[var(--bg-inset)] shadow-sm border border-[var(--border-secondary)]">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs text-[var(--text-secondary)]">{item.time}</span>
-                                            {/* زر حذف العملية */}
-                                            <button 
-                                                onClick={() => onDeleteItem(item)} 
-                                                aria-label={`حذف ${item.expression}`} 
-                                                className="text-red-500/70 hover:text-red-500 transition-colors p-1"
-                                            >
-                                                <Icon name="trash" className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                        <div className="mt-1">
-                                            <p 
-                                                onClick={() => onHistoryItemClick(item)}
-                                                className="text-sm text-[var(--text-secondary)] break-all cursor-pointer hover:underline hover:text-[var(--text-primary)] transition-colors"
-                                            >
-                                                {item.expression}
-                                            </p>
-                                            <p 
-                                                onClick={() => onHistoryItemClick(item)}
-                                                className="text-lg font-bold text-[var(--text-primary)] cursor-pointer hover:underline"
-                                            >
-                                                = {item.result}
-                                            </p>
-                                        </div>
+        {/* أزرار المشاركة والتصدير والمسح في صف واحد */}
+        <div className="flex flex-wrap gap-2">
+            {/* [NEW] زر مشاركة السجل كاملاً */}
+            <button onClick={onShareFullHistory} disabled={totalFilteredEntries === 0} className="flex-1 py-2 rounded-xl text-sm font-semibold bg-blue-500 hover:bg-blue-600 transition-colors text-white disabled:opacity-50 min-w-[45%]">
+                <Icon name="share" className="w-4 h-4 ml-1 inline-block" /> مشاركة السجل
+            </button>
+            
+            {/* زر التصدير TXT */}
+            <button onClick={() => handleExport(onExportHistory)} disabled={totalFilteredEntries === 0} className="flex-1 py-2 rounded-xl text-sm font-semibold bg-[var(--bg-inset)] hover:brightness-95 transition-colors border border-[var(--border-secondary)] disabled:opacity-50 min-w-[45%]">
+                <Icon name="file_download" className="w-4 h-4 ml-1 inline-block" /> TXT
+            </button>
+            
+            {/* زر التصدير CSV */}
+            <button onClick={() => handleExport(onExportCsvHistory)} disabled={totalFilteredEntries === 0} className="flex-1 py-2 rounded-xl text-sm font-semibold bg-[var(--bg-inset)] hover:brightness-95 transition-colors border border-[var(--border-secondary)] disabled:opacity-50 min-w-[45%]">
+                <Icon name="file_download" className="w-4 h-4 ml-1 inline-block" /> CSV
+            </button>
+            
+            {/* زر مسح السجل */}
+            <button onClick={onClearHistory} disabled={totalFilteredEntries === 0} className="flex-1 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors text-white disabled:opacity-50 min-w-[45%]">
+                <Icon name="delete" className="w-4 h-4 ml-1 inline-block" /> مسح
+            </button>
+        </div>
 
-                                        {/* Tax and Notes Section */}
-                                        {(item.taxResult || item.notes) && (
-                                            <div className="mt-2 border-t border-[var(--border-secondary)] pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                                {/* Tax Info */}
-                                                {item.taxResult && (
-                                                    <div className="text-xs text-[var(--text-secondary)] leading-tight">
-                                                        <p className='font-medium'>
-                                                            {item.taxLabel || 'النتيجة مع الضريبة'}: <span className='text-[var(--text-primary)] font-bold'>{item.taxResult}</span>
-                                                        </p>
-                                                        <p className='opacity-80'>{getTaxModeLabel(item.taxMode, item.taxRate)}</p>
-                                                    </div>
-                                                )}
-                                                
-                                                {/* Notes & Edit Button */}
-                                                <div className="flex items-center w-full sm:w-auto">
-                                                    {editingItem && editingItem.id === item.id ? (
-                                                        <div className='flex items-center w-full'>
-                                                            <input
-                                                                type="text"
-                                                                value={editingItem.note}
-                                                                onChange={(e) => setEditingItem({...editingItem, note: e.target.value})}
-                                                                onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
-                                                                placeholder="أضف ملاحظة..."
-                                                                className="flex-grow p-1 rounded border border-[var(--accent-color)] bg-[var(--bg-panel)] text-sm text-[var(--text-primary)]"
-                                                            />
-                                                            <button onClick={handleEditSave} className='ml-2 text-sm text-green-500 font-bold hover:text-green-600 whitespace-nowrap'>
-                                                                حفظ
-                                                            </button>
-                                                            <button onClick={() => setEditingItem(null)} className='ml-2 text-sm text-red-500 hover:text-red-600 whitespace-nowrap'>
-                                                                إلغاء
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <div className='flex items-center w-full justify-end'>
-                                                            {item.notes ? (
-                                                                <p className="text-sm text-[var(--text-secondary)] italic px-2 break-all text-center flex-grow">{`"${item.notes}"`}</p>
-                                                            ) : (
-                                                                <div className="flex-grow"></div>
-                                                            )}
-                                                            <button 
-                                                                onClick={() => setEditingItem({ id: item.id, note: item.notes || '' })} 
-                                                                className="text-sm text-[var(--accent-color)] hover:underline whitespace-nowrap"
-                                                            >
-                                                                {item.notes ? "تعديل ملاحظة" : "إضافة ملاحظة"}
-                                                            </button>
-                                                        </div>
-                                                    )}
+        {/* فلاتر التاريخ (احتفظ بها في حال أردت استخدامها لاحقاً) */}
+        <div className="flex gap-2 text-sm text-[var(--text-secondary)] mt-2">
+            <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)} 
+                className="w-1/2 p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] text-center appearance-none"
+                dir="ltr"
+            />
+            <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)} 
+                className="w-1/2 p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] text-center appearance-none"
+                dir="ltr"
+            />
+        </div>
+
+      </div>
+
+      <div className="h-full max-h-[calc(100vh-250px)] overflow-y-auto">
+        {totalFilteredEntries === 0 && (
+            <p className="text-center text-[var(--text-secondary)] p-8">لا يوجد عمليات لعرضها.</p>
+        )}
+        
+        {totalFilteredEntries > 0 && (
+            <div className="space-y-4">
+                {/* التكرار على التواريخ المرتبة تنازلياً */}
+                {sortedDates.map((date) => (
+                    <div key={date} className="bg-[var(--bg-inset)] rounded-xl shadow-lg p-3">
+                        <div className="flex justify-between items-center border-b pb-2 mb-3 border-[var(--border-secondary)]">
+                            {/* [MODIFIED] عرض التاريخ وحجم المجموعة */}
+                            <h5 className="font-bold text-lg text-[var(--text-primary)]">
+                                {date} ({filteredAndGroupedHistory[date].length})
+                            </h5>
+                            {/* [NEW] زر مشاركة عمليات هذا اليوم */}
+                            <button onClick={() => onShareDailyHistory(date)} className="text-[var(--accent-color)] hover:text-[var(--text-primary)] transition-colors text-sm font-semibold flex items-center">
+                                <Icon name="share" className="w-4 h-4 ml-1" /> مشاركة عمليات اليوم
+                            </button>
+                        </div>
+                        <div className="space-y-3">
+                            {/* عرض عمليات هذا اليوم */}
+                            {filteredAndGroupedHistory[date].map(item => (
+                                <div key={item.id} className="p-3 bg-[var(--bg-card)] rounded-lg shadow-inner border border-[var(--border-secondary)]">
+                                    <div 
+                                        onClick={() => onHistoryItemClick(item)} 
+                                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    >
+                                        <p className="text-sm text-[var(--text-secondary)]">{item.time}</p>
+                                        <p className="text-xl font-medium text-[var(--text-primary)] break-words dir-ltr">{item.expression}</p>
+                                        <p className="text-2xl font-bold text-[var(--accent-color)] break-words dir-ltr mt-1">= {item.result}</p>
+                                        {item.taxResult && (
+                                            <p className="text-sm text-green-500 mt-1 break-words dir-ltr">
+                                                {item.taxLabel || 'النتيجة مع الضريبة'}: {item.taxResult}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* منطقة الملاحظة والحذف */}
+                                    <div className="mt-3 pt-2 border-t border-[var(--border-secondary)] flex flex-col gap-2">
+                                        <button 
+                                            onClick={() => onDeleteItem(item)} 
+                                            className="text-red-500 text-sm font-semibold flex items-center justify-end hover:text-red-600 transition-colors w-full"
+                                        >
+                                            <Icon name="delete" className="w-4 h-4 mr-1" /> حذف العملية
+                                        </button>
+                                        
+                                        {/* محرر الملاحظة */}
+                                        {editingItem && editingItem.id === item.id ? (
+                                            <div className="flex flex-col gap-2">
+                                                <textarea
+                                                    value={editingItem.note}
+                                                    onChange={(e) => setEditingItem(prev => (prev ? {...prev, note: e.target.value} : null))}
+                                                    placeholder="أضف ملاحظة لهذه العملية..."
+                                                    className="w-full p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] text-sm resize-none h-16"
+                                                />
+                                                <div className="flex justify-end gap-2">
+                                                    <button 
+                                                        onClick={() => setEditingItem(null)} 
+                                                        className="text-[var(--text-secondary)] text-sm hover:underline"
+                                                    >
+                                                        إلغاء
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleSaveNote(item.id, editingItem.note)} 
+                                                        className="text-green-500 text-sm font-bold hover:underline"
+                                                    >
+                                                        حفظ الملاحظة
+                                                    </button>
                                                 </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-between">
+                                                {item.notes ? (
+                                                    <p className="text-sm text-[var(--text-secondary)] italic px-2 break-all flex-grow">
+                                                        {`\"${item.notes}\"`}
+                                                    </p>
+                                                ) : (
+                                                    <div className="flex-grow"></div>
+                                                )}
+                                                <button 
+                                                    onClick={() => setEditingItem({ id: item.id, note: item.notes || '' })} 
+                                                    className="text-sm text-[var(--accent-color)] hover:underline whitespace-nowrap"
+                                                >
+                                                    {item.notes ? "تعديل ملاحظة" : "إضافة ملاحظة"}
+                                                </button>
                                             </div>
                                         )}
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
-            )}
-        </div>
+                    </div>
+                ))}
+            </div>
+        )}
       </div>
     </div>
   );
