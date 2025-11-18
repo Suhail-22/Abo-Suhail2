@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { HistoryItem } from '../types';
-import Icon from './Icon'; // تأكد من وجود ملف Icon.tsx
+import Icon from './Icon';
 
-// [MODIFIED] إضافة خصائص المشاركة الجديدة
 interface HistoryPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -13,19 +12,16 @@ interface HistoryPanelProps {
   onExportCsvHistory: (startDate: string, endDate: string) => void;
   onUpdateHistoryItemNote: (id: number, note: string) => void;
   onDeleteItem: (item: HistoryItem) => void;
-  // [NEW] خصائص المشاركة
   onShareFullHistory: () => void;
   onShareDailyHistory: (date: string) => void;
 }
 
-// [NEW] تعريف نوع جديد للمتغير المجمَّع
 type GroupedHistory = {
   [date: string]: HistoryItem[];
 };
 
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, onClearHistory, onHistoryItemClick, onExportHistory, onExportCsvHistory, onUpdateHistoryItemNote, onDeleteItem, onShareFullHistory, onShareDailyHistory }) => {
-  // [ADDED/MODIFIED] حالة مدخلات التاريخ
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,13 +37,11 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
     setEditingItem(null);
   };
 
-  // [MODIFIED] تعديل منطق التجميع والتصفية
   const groupedAndFilteredHistory = useMemo(() => {
     if (history.length === 0) return {};
 
     let filteredHistory = history;
 
-    // 1. تصفية حسب البحث
     if (searchTerm.trim() !== '') {
       const lowerCaseSearchTerm = searchTerm.toLowerCase();
       filteredHistory = filteredHistory.filter(item =>
@@ -57,23 +51,18 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
       );
     }
 
-    // 2. تصفية حسب التاريخ (إذا كان مطلوباً)
     if (startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        // لضمان شمول اليوم الأخير بالكامل
         end.setDate(end.getDate() + 1); 
         filteredHistory = filteredHistory.filter(item => {
-            // تحويل التاريخ في السجل ليكون متوافقاً مع مقارنة JS
             const itemDate = new Date(item.date.replace(/\//g, '-')); 
             return itemDate >= start && itemDate < end;
         });
     }
 
-
-    // 3. التجميع حسب التاريخ
     const grouped: GroupedHistory = filteredHistory.reduce((acc, item) => {
-      const date = item.date; // التاريخ يكون بالصيغة 'YYYY/MM/DD'
+      const date = item.date;
       if (!acc[date]) {
         acc[date] = [];
       }
@@ -84,13 +73,11 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
     return grouped;
   }, [history, startDate, endDate, searchTerm]);
 
-  // للحصول على مفاتيح التاريخ بترتيب عكسي (الأحدث أولاً)
   const sortedDates = useMemo(() => {
     return Object.keys(groupedAndFilteredHistory).sort((a, b) => {
-        // تحويل 'YYYY/MM/DD' إلى تاريخ للمقارنة
         const dateA = new Date(a.replace(/\//g, '-')).getTime();
         const dateB = new Date(b.replace(/\//g, '-')).getTime();
-        return dateB - dateA; // تنازلي
+        return dateB - dateA;
     });
   }, [groupedAndFilteredHistory]);
 
@@ -109,26 +96,27 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
   if (!isOpen) return null;
 
   return (
-    // تم زيادة z-index لضمان ظهور اللوحة فوق أي شيء آخر
+    // z-50 لضمان الظهور فوق أي شيء آخر
     <div className="fixed inset-0 z-50 flex justify-center items-end md:items-center p-4">
       {/* Panel Container */}
       <div className={`
-        bg-[var(--bg-panel)] rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-lg h-[90%] md:h-[90%] 
+        bg-[var(--bg-panel)] rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-lg h-full md:h-[90%] 
         transform transition-all duration-300 ease-out 
         ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
         flex flex-col 
       `}>
         {/* Header Section */}
-        {/* تم زيادة z-index هنا أيضاً لضمان ظهور الهيدر فوق المحتوى القابل للتمرير */}
-        <div className="flex justify-between items-center p-4 border-b border-[var(--border-secondary)] sticky top-0 bg-[var(--bg-panel)] z-20">
+        {/* top-0 / z-30 */}
+        <div className="flex justify-between items-center p-4 border-b border-[var(--border-secondary)] sticky top-0 bg-[var(--bg-panel)] z-30">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">سجل العمليات</h2>
           <button onClick={onClose} aria-label="إغلاق السجل" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
             <Icon name="close" className="w-6 h-6" />
           </button>
         </div>
-
+        
         {/* Action Section */}
-        <div className="p-4 flex flex-wrap gap-2 justify-between items-center border-b border-[var(--border-secondary)] bg-[var(--bg-panel)] sticky top-[56px] z-20">
+        {/* top-[56px] (ارتفاع الـ Header) / z-20 */}
+        <div className="p-4 flex flex-wrap gap-2 justify-between items-center border-b border-[var(--border-secondary)] bg-[var(--bg-panel)] sticky top-[56px] z-20"> 
             
             {/* 1. مجموعة أزرار التصدير (يمين في RTL) */}
             <div className='flex gap-2'>
@@ -176,7 +164,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
         </div>
 
         {/* Search and Filter Section */}
-        {/* تم زيادة z-index لضمان ظهوره */}
+        {/* top-[138px] (ارتفاع الـ Header + Action Section) / z-20 */}
         <div className="p-4 flex flex-col gap-3 border-b border-[var(--border-secondary)] bg-[var(--bg-panel)] sticky top-[120px] z-20"> 
             {/* Search Input */}
             <input
@@ -187,7 +175,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
                 className="w-full p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
             />
             
-            {/* Date Filters - [NEW] تمت إضافة هذه الخانات */}
+            {/* Date Filters */}
             <div className='flex gap-2 justify-between'>
                 {/* From Date */}
                 <div className='flex flex-col flex-1'>
@@ -197,6 +185,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
                         id="startDate"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
+                        // تم تطبيق تنسيق text-[var(--text-primary)] لجعل النص مرئياً
                         className="w-full p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
                     />
                 </div>
@@ -209,6 +198,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
                         id="endDate"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
+                        // تم تطبيق تنسيق text-[var(--text-primary)] لجعل النص مرئياً
                         className="w-full p-2 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
                     />
                 </div>
@@ -216,7 +206,8 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
         </div>
         
         {/* History List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 z-10"> {/* تم تخفيض z-index ليكون أسفل الأقسام الثابتة */}
+        {/* تم استخدام z-10 ليكون أسفل الأقسام الثابتة */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 z-10"> 
             {history.length === 0 ? (
                 <p className="text-center text-[var(--text-secondary)] mt-8">
                     لا توجد عمليات مسجلة حتى الآن.
@@ -229,7 +220,9 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
                 <div className="space-y-6">
                     {sortedDates.map(date => (
                         <div key={date} className="history-day-group">
-                            <div className="sticky top-0 -mt-4 pt-4 mb-2 flex justify-between items-center bg-[var(--bg-panel)] z-10 border-b border-[var(--border-secondary)] pb-2">
+                            {/* تاريخ اليوم - يثبت عندما يتم التمرير */}
+                            {/* تم تعديل top ليثبت أسفل قسم Search/Filter - يجب إعادة حساب القيمة الدقيقة بناءً على ارتفاع قسم البحث/الفلترة */}
+                            <div className="sticky top-[260px] -mt-4 pt-4 mb-2 flex justify-between items-center bg-[var(--bg-panel)] z-15 border-b border-[var(--border-secondary)] pb-2">
                                 <h3 className="text-lg font-semibold text-[var(--accent-color)]">
                                     {date} ({groupedAndFilteredHistory[date].length} عملية)
                                 </h3>
