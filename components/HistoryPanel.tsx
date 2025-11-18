@@ -112,7 +112,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-end md:items-center p-4">
+    <div className="fixed inset-0 z-[9999] flex justify-center items-end md:items-center p-4">
       {/* Panel Container */}
       <div
         className={`
