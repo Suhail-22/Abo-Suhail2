@@ -34,7 +34,7 @@ function App() {
   const [fontScale, setFontScale] = useLocalStorage<number>('calcFontScale_v2', 1);
   const [buttonTextColor, setButtonTextColor] = useLocalStorage<string | null>('calcButtonTextColor_v1', null);
   
-  // [MODIFIED] ميزة قفل الدوران
+  // [MODIFIED] ميزة قفل الدوران (تم الإبقاء عليها كما هي، المشكلة بيئية)
   const [isOrientationLocked, setIsOrientationLocked] = useLocalStorage<boolean>('isOrientationLocked_v1', false);
   
   useEffect(() => {
@@ -203,13 +203,13 @@ function App() {
       }
   };
   
-  // [MODIFIED] تعديل وظيفة التصدير لإضافة BOM لـ TXT (لإصلاح مشكلة التشفير)
+  // تعديل وظيفة التصدير لإضافة BOM لـ TXT (لإصلاح مشكلة التشفير)
   const createExportContent = useCallback((history: any[], format: 'txt' | 'csv') => {
     const getTaxModeLabel = (mode?: string, rate?: number) => {
         if (!mode) return "غير مفعلة";
         switch (mode) {
             case 'add-15': return "إضافة 15%";
-            case 'divide-93': return "القسمة على 0.93";
+            case 'divide-93': return "القسمة على 0.93"; // تم الإبقاء على الوصف الطويل هنا للتصدير
             case 'custom': return `إضافة مخصص ${rate}%`;
             case 'extract-custom': return `استخلاص مخصص ${rate}%`;
             default: return "غير معروف";
@@ -269,11 +269,13 @@ function App() {
       closeAllPanels();
   }, [calculator.history, closeAllPanels, showNotification, createExportContent]);
   
-  // [NEW] وظيفة المشاركة (Share)
+  // [MODIFIED] وظيفة المشاركة (Share) - تم إضافة الملاحظات
   
   const createShareContent = useCallback((history: HistoryItem[], type: 'full' | 'day', date?: string) => {
     const formatItem = (item: HistoryItem) => 
-        `${item.expression} = ${item.result}` + (item.taxResult ? ` (مع ضريبة: ${item.taxResult})` : '');
+        `${item.expression} = ${item.result}` + 
+        (item.taxResult ? ` (مع ضريبة: ${item.taxResult})` : '') + 
+        (item.notes ? ` [الملاحظة: ${item.notes}]` : ''); // <--- تم إضافة الملاحظات هنا
 
     if (type === 'full') {
         const header = "--- سجل عمليات الآلة الحاسبة (الكامل) ---\n";
