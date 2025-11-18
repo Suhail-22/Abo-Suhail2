@@ -33,6 +33,23 @@ function App() {
   const [fontFamily, setFontFamily] = useLocalStorage<string>('calcFontFamily_v2', 'Tajawal');
   const [fontScale, setFontScale] = useLocalStorage<number>('calcFontScale_v2', 1);
   const [buttonTextColor, setButtonTextColor] = useLocalStorage<string | null>('calcButtonTextColor_v1', null);
+  
+  // ======================================================
+  // [NEW] 🔒 ميزة قفل الدوران (الإعداد سيكون في SettingsPanel لاحقاً)
+  const [isOrientationLocked, setIsOrientationLocked] = useLocalStorage<boolean>('isOrientationLocked_v1', false);
+  
+  useEffect(() => {
+    if ('orientation' in screen && 'lock' in screen.orientation) {
+        if (isOrientationLocked) {
+            // القفل على الوضع العمودي
+            screen.orientation.lock('portrait').catch(err => console.error("Failed to lock orientation:", err));
+        } else {
+            // إلغاء القفل ليعود إلى تلقائي (أفقي/عمودي)
+            screen.orientation.unlock();
+        }
+    }
+  }, [isOrientationLocked]);
+  // ======================================================
 
   const showNotification = useCallback((message: string) => {
     setNotification({ message, show: true });
@@ -185,6 +202,8 @@ function App() {
       }
   };
   
+  // ======================================================
+  // [MODIFIED] تعديل وظيفة التصدير لإضافة BOM لـ TXT (لإصلاح مشكلة التشفير)
   const createExportContent = useCallback((history: any[], format: 'txt' | 'csv') => {
     const getTaxModeLabel = (mode?: string, rate?: number) => {
         if (!mode) return "غير مفعلة";
@@ -196,6 +215,9 @@ function App() {
             default: return "غير معروف";
         }
     };
+    
+    // علامة الترتيب البايتية (BOM) لضمان UTF-8 في برامج ويندوز
+    const BOM = '\uFEFF'; 
 
     if (format === 'txt') {
         const header = "سجل عمليات الآلة الحاسبة المتقدمة\n\n";
@@ -207,7 +229,8 @@ function App() {
             (item.notes ? `ملاحظة: ${item.notes}\n` : '') +
             "------------------------------------\n"
         ).join('\n');
-        return header + content;
+        // تم إضافة BOM هنا
+        return BOM + header + content;
     }
 
     if (format === 'csv') {
@@ -217,7 +240,8 @@ function App() {
             item.date, item.time, item.expression, item.result,
             getTaxModeLabel(item.taxMode, item.taxRate), item.taxRate, item.taxResult, item.notes
         ].map(escapeCsvCell).join(',')).join('\n');
-        return `\uFEFF${headers}\n${rows}`;
+        // BOM موجودة بالفعل في النسخة الأصلية للـ CSV
+        return BOM + headers + '\n' + rows;
     }
     return '';
   }, []);
@@ -231,7 +255,8 @@ function App() {
       }
 
       const content = createExportContent(filteredHistory, format);
-      const mimeType = format === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain;charset=utf-8';
+      // التشفير utf-8 تم تحديده في البنية
+      const mimeType = format === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain;charset=utf-8'; 
       const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -245,6 +270,77 @@ function App() {
       showNotification(`جاري تصدير السجل كـ ${format.toUpperCase()}...`);
       closeAllPanels();
   }, [calculator.history, closeAllPanels, showNotification, createExportContent]);
+  
+  // ======================================================
+  // [NEW] إضافة وظيفة المشاركة (Share)
+  
+  const createShareContent = useCallback((history: HistoryItem[], type: 'full' | 'day', date?: string) => {
+    // دالة مساعدة لتنسيق عنصر واحد
+    const formatItem = (item: HistoryItem) => 
+        `${item.expression} = ${item.result}` + (item.taxResult ? ` (مع ضريبة: ${item.taxResult})` : '');
+
+    if (type === 'full') {
+        const header = "--- سجل عمليات الآلة الحاسبة (الكامل) ---\n";
+        const content = history.map(item => `\n${item.date} - ${item.time}:\n${formatItem(item)}`).join('');
+        return { 
+            title: 'مشاركة سجل العمليات الكامل', 
+            text: header + content + "\n\n---"
+        };
+    }
+
+    if (type === 'day' && date) {
+        // يتم استخدام التاريخ كما تم تمريره من HistoryPanel
+        const dayHistory = history.filter(item => item.date === date);
+        const header = `--- سجل عمليات يوم: ${date} ---\n`;
+        const content = dayHistory.map(item => `\n${item.time}: ${formatItem(item)}`).join('');
+        return { 
+            title: `مشاركة سجل عمليات يوم ${date}`, 
+            text: header + content + "\n\n---"
+        };
+    }
+    return { title: 'مشاركة', text: 'لا يوجد محتوى للمشاركة.' };
+  }, []);
+
+  const handleShare = useCallback(async (type: 'full' | 'day', date?: string) => {
+    if (!navigator.share) {
+        showNotification("ميزة المشاركة غير مدعومة في متصفحك أو جهازك.");
+        return;
+    }
+
+    let historyToShare: HistoryItem[] = calculator.history;
+    
+    // التاريخ يكون بصيغة 'YYYY/MM/DD' في السجل، لذا نستخدمه كما هو للمقارنة
+    const dateToFilter = date; 
+
+    if (type === 'day' && dateToFilter) {
+        historyToShare = calculator.history.filter(item => item.date === dateToFilter);
+        if (historyToShare.length === 0) {
+            showNotification(`لا يوجد عمليات ليوم ${dateToFilter}.`);
+            return;
+        }
+    } else if (type === 'full' && calculator.history.length === 0) {
+        showNotification("السجل فارغ ولا يمكن مشاركته.");
+        return;
+    }
+
+    const { title, text } = createShareContent(historyToShare, type, dateToFilter);
+
+    try {
+        await navigator.share({
+            title: title,
+            text: text
+        });
+        showNotification("تمت مشاركة السجل بنجاح!");
+    } catch (error) {
+        // يتم تجاهل خطأ الإلغاء
+        if ((error as Error).name !== 'AbortError') {
+             console.error('Sharing failed:', error);
+             showNotification("فشلت عملية المشاركة.");
+        }
+    }
+  }, [calculator.history, showNotification, createShareContent]);
+  
+  // ======================================================
   
   const anyPanelOpen = isSettingsOpen || isHistoryOpen || isSupportOpen || isAboutOpen;
 
@@ -282,6 +378,9 @@ function App() {
           setFontScale={setFontScale}
           buttonTextColor={buttonTextColor}
           setButtonTextColor={setButtonTextColor}
+          // [NEW] إضافة خاصية قفل الدوران
+          isOrientationLocked={isOrientationLocked} 
+          setIsOrientationLocked={setIsOrientationLocked} 
           onOpenSupport={() => { closeAllPanels(); setIsSupportOpen(true); }}
           onShowAbout={() => { closeAllPanels(); setIsAboutOpen(true); }}
           onCheckForUpdates={onCheckForUpdates}
@@ -297,6 +396,9 @@ function App() {
           }}
           onExportHistory={(start, end) => handleExport('txt', start, end)}
           onExportCsvHistory={(start, end) => handleExport('csv', start, end)}
+          // [NEW] إضافة خصائص المشاركة
+          onShareFullHistory={() => handleShare('full')}
+          onShareDailyHistory={(date) => handleShare('day', date)}
           onUpdateHistoryItemNote={calculator.actions.updateHistoryItemNote}
           onDeleteItem={handleDeleteHistoryItem}
         />}
