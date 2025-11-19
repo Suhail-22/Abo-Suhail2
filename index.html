@@ -153,70 +153,9 @@
 </script>
 </head>
 <body>
-  <!-- واجهة أولية تظهر عند تعطيل JavaScript -->
-  <div id="no-js-message" class="dark:bg-gray-900 bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div class="text-center">
-      <h1 class="text-2xl font-bold text-gray-800 dark:text-white">تحتاج إلى تمكين JavaScript لتشغيل هذا التطبيق.</h1>
-      <p class="text-gray-600 dark:text-gray-300 mt-2">الآلة الحاسبة متاحة عند تفعيل JavaScript.</p>
-    </div>
-  </div>
-
-  <!-- واجهة الآلة الحاسبة الأساسية (HTML فقط) -->
-  <div id="calculator-base" class="hidden dark:bg-[#0a0e17] bg-gradient-to-br from-[#F0F4F8] to-[#D9E2EC] min-h-screen flex items-center justify-center p-4">
-    <div id="calculator-container" class="w-full max-w-md mx-auto">
-      <div id="calculator-header" class="bg-[#EDF2F7] dark:bg-[rgba(20,35,70,0.5)] rounded-t-xl p-4 text-center">
-        <h1 class="text-xl font-bold text-gray-800 dark:text-[#e3f2fd]">آلة حاسبة أبو سهيل</h1>
-      </div>
-      <div id="calculator-main" class="bg-white dark:bg-[rgba(15,25,45,0.7)] shadow-lg rounded-b-xl p-4">
-        <div id="display" class="bg-[#EDF2F7] dark:bg-[rgba(10,20,40,0.85)] rounded-lg p-4 mb-4 text-right text-xl font-semibold text-gray-800 dark:text-white">
-          0
-        </div>
-        <div id="buttons-grid" class="grid grid-cols-4 gap-2">
-          <button class="btn-function bg-gradient-to-br from-[#CBD5E0] to-[#E2E8F0] dark:from-[rgba(30,55,100,0.8)] dark:to-[rgba(45,75,120,0.9)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-sm">C</button>
-          <button class="btn-function bg-gradient-to-br from-[#CBD5E0] to-[#E2E8F0] dark:from-[rgba(30,55,100,0.8)] dark:to-[rgba(45,75,120,0.9)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-sm">±</button>
-          <button class="btn-function bg-gradient-to-br from-[#CBD5E0] to-[#E2E8F0] dark:from-[rgba(30,55,100,0.8)] dark:to-[rgba(45,75,120,0.9)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-sm">%</button>
-          <button class="btn-operator bg-gradient-to-br from-[#CBD5E0] to-[#E2E8F0] dark:from-[rgba(30,55,100,0.8)] dark:to-[rgba(45,75,120,0.9)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-sm">÷</button>
-
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">7</button>
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">8</button>
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">9</button>
-          <button class="btn-operator bg-gradient-to-br from-[#CBD5E0] to-[#E2E8F0] dark:from-[rgba(30,55,100,0.8)] dark:to-[rgba(45,75,120,0.9)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-sm">×</button>
-
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">4</button>
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">5</button>
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">6</button>
-          <button class="btn-operator bg-gradient-to-br from-[#CBD5E0] to-[#E2E8F0] dark:from-[rgba(30,55,100,0.8)] dark:to-[rgba(45,75,120,0.9)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-sm">-</button>
-
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">1</button>
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">2</button>
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">3</button>
-          <button class="btn-operator bg-gradient-to-br from-[#CBD5E0] to-[#E2E8F0] dark:from-[rgba(30,55,100,0.8)] dark:to-[rgba(45,75,120,0.9)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-sm">+</button>
-
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)] col-span-2">0</button>
-          <button class="btn-number bg-gradient-to-br from-[#E2E8F0] to-[#FFFFFF] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-gray-800 dark:text-[#bbdefb] font-medium shadow-[0_5px_10px_rgba(0,0,0,0.08)]">.</button>
-          <button class="btn-equals bg-gradient-to-br from-[#38A169] to-[#2F855A] dark:from-[rgba(30,50,85,0.7)] dark:to-[rgba(40,65,100,0.8)] rounded-lg p-3 text-white font-medium shadow-[0_4px_6px_-1px_rgb(46_125_50_/_0.2),_0_2px_4px_-2px_rgb(46_125_50_/_0.2)]">=</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- النص الذي يظهر عند تعطيل JavaScript -->
   <noscript>You need to enable JavaScript to run this app.</noscript>
-  <!-- الحاوية التي سيستخدمها React -->
-  <div id="root" class="hidden"></div>
-
-  <script>
-    // عند تفعيل JavaScript:
-    // 1. إخفاء الرسالة "You need to enable JavaScript..."
-    // 2. إخفاء واجهة HTML الأساسية
-    // 3. إظهار حاوية React (root)
-    document.getElementById('no-js-message').style.display = 'none';
-    document.getElementById('calculator-base').style.display = 'block';
-    document.getElementById('root').style.display = 'block';
-
-    // استدعاء الملف الرئيسي للتطبيق
-    import('index.tsx');
-  </script>
+  <div id="root"></div>
+  <script type="module" src="index.tsx"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
