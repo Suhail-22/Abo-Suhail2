@@ -1,0 +1,154 @@
+import React, { useState, useEffect } from 'react';
+
+interface HistoryItem {
+  expression: string;
+  result: string;
+  timestamp: string;
+  tax?: string;
+  notes?: string;
+}
+
+interface HistoryDayGroup {
+  date: string;
+  formattedDate: string;
+  items: HistoryItem[];
+}
+
+interface HistoryPanelProps {
+  history: HistoryItem[];
+  onClose: () => void;
+  onExportTXT: () => void;
+  onExportCSV: () => void;
+  onClear: () => void;
+  onShareFullHistory: () => void; // دالة مشاركة السجل الكامل
+  onShareDailyHistory: (dateString: string) => void; // دالة مشاركة اليوم
+  onEditItem: (timestamp: string, newNotes: string) => void;
+  onDeleteItem: (timestamp: string) => void;
+  onShareSingleItem: (item: HistoryItem) => void;
+}
+
+const HistoryPanel: React.FC<HistoryPanelProps> = ({
+  history,
+  onClose,
+  onExportTXT,
+  onExportCSV,
+  onClear,
+  onShareFullHistory,
+  onShareDailyHistory,
+  onEditItem,
+  onDeleteItem,
+  onShareSingleItem,
+}) => {
+  const [groupedHistory, setGroupedHistory] = useState<HistoryDayGroup[]>([]);
+  const [todayHistoryCount, setTodayHistoryCount] = useState(0);
+
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const todayCount = history.filter(item => new Date(item.timestamp).toDateString() === today).length;
+    setTodayHistoryCount(todayCount);
+
+    const grouped: { [key: string]: HistoryItem[] } = {};
+    history.forEach(item => {
+      const date = new Date(item.timestamp).toDateString();
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(item);
+    });
+
+    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    const formattedGroups: HistoryDayGroup[] = sortedDates.map(date => {
+      const dateObj = new Date(date);
+      const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const formattedDate = dateObj.toLocaleDateString('ar-EG', options);
+      return { date, formattedDate, items: grouped[date].reverse() }; // عكس داخل اليوم
+    });
+
+    setGroupedHistory(formattedGroups);
+  }, [history]);
+
+  const handleEditNotes = (timestamp: string, currentNotes: string = '') => {
+    const newNotes = prompt('تعديل الملاحظات:', currentNotes);
+    if (newNotes !== null) {
+      onEditItem(timestamp, newNotes);
+    }
+  };
+
+  if (history.length === 0) {
+    return (
+      <div className="history-panel active">
+        <div className="history-header">
+          <h2>سجل العمليات</h2>
+          <button className="close-history-btn" onClick={onClose}>&times;</button>
+        </div>
+        <div className="history-content">
+          <div className="no-history">لا توجد عمليات في السجل</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="history-panel active">
+      <div className="history-header">
+        <h2>سجل العمليات</h2>
+        <button className="close-history-btn" onClick={onClose}>&times;</button>
+      </div>
+      <div className="history-content">
+        <div className="history-actions">
+          <button onClick={onExportTXT}>تصدير TXT</button>
+          <button onClick={onExportCSV}>تصدير CSV</button>
+          {/* رمز مشاركة السجل الكامل (طلب المستخدم) */}
+          <button id="fullHistoryShareBtn" onClick={onShareFullHistory} title="مشاركة السجل الكامل">
+            📤
+          </button>
+          <button onClick={onClear}>مسح السجل</button>
+        </div>
+        <div className="history-list" id="historyList">
+          {groupedHistory.map((dayGroup, index) => {
+            const isToday = new Date(dayGroup.date).toDateString() === new Date().toDateString();
+            // إضافة فاصل مرئي بين الأمس واليوم
+            const separator = index > 0 && isToday ? <hr className="today-separator" /> : null;
+
+            return (
+              <div key={dayGroup.date} className="history-day">
+                {separator}
+                <div className="history-day-header">
+                  <div className="history-day-title">{dayGroup.formattedDate}</div>
+                  <div className="history-day-count">{dayGroup.items.length}</div>
+                  {/* رمز مشاركة اليوم بجوار عدد العمليات اليومية (طلب المستخدم) */}
+                  <button 
+                    className="history-day-share-btn" 
+                    onClick={() => onShareDailyHistory(dayGroup.date)}
+                    title={`مشاركة ${dayGroup.items.length} عملية`}
+                  >
+                    📤
+                  </button>
+                </div>
+                <div className="history-items">
+                  {dayGroup.items.map((item) => (
+                    <div key={item.timestamp} className="history-item">
+                      <div className="history-item-content">
+                        <div className="history-expression">{item.expression}</div>
+                        <div className="history-result">= {item.result}</div>
+                        {item.tax && item.tax !== "0.00" && <div className="history-tax">الضريبة: {item.tax}</div>}
+                        {item.notes && <div className="history-notes">{item.notes}</div>}
+                      </div>
+                      <div className="history-item-actions">
+                        <button className="history-item-edit-btn" onClick={() => handleEditNotes(item.timestamp, item.notes)}>✏️</button>
+                        <button className="history-item-share-btn" onClick={() => onShareSingleItem(item)}>📤</button>
+                        <button className="history-item-delete-btn" onClick={() => onDeleteItem(item.timestamp)}>🗑️</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default HistoryPanel;
