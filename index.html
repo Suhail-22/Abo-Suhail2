@@ -4,12 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Abo Suhail Calculator</title>
-  <meta name="theme-color" content="#FFFFFF"/>
+  <!-- تحديث theme-color ليطابق تصميم التطبيق -->
+  <meta name="theme-color" content="#131827"/>
   
   <!-- Preconnect to required origins for faster resource fetching -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
+
+  <!-- إضافة Preload لتحسين LCP و FCP -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Cairo:wght@400;700&family=Almarai:wght@400;700&display=swap" />
+  <link rel="preload" as="script" href="index.tsx" />
 
   <!-- Defer non-critical CSS (Google Fonts) to avoid render-blocking -->
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Cairo:wght@400;700&family=Almarai:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
