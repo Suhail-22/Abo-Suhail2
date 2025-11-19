@@ -1,5 +1,5 @@
 // service-worker.js - For Abo Suhail Calc - No UI Changes, Only Performance & PWA
-const CACHE_NAME = 'v6-11202025'; // تحديث اسم الكاش لتفعيل التحديث
+const CACHE_NAME = 'v7-11202025'; // تحديث اسم الكاش لتفعيل التحديث
 const urlsToCache = [
   '/',
   '/index.html',
