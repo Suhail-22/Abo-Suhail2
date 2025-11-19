@@ -25,9 +25,6 @@ interface SettingsPanelProps {
   onOpenSupport: () => void;
   onShowAbout: () => void;
   onCheckForUpdates: () => void;
-  // [NEW] خصائص قفل الدوران
-  isOrientationLocked: boolean;
-  setIsOrientationLocked: (locked: boolean) => void;
 }
 
 const convertArabicNumerals = (str: string | number): string => {
@@ -37,24 +34,7 @@ const convertArabicNumerals = (str: string | number): string => {
         .replace(/[۰۱۲۳۴۵۶۷۸۹]/g, d => String.fromCharCode(d.charCodeAt(0) - 1776));
 };
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ 
-    isOpen, 
-    onClose, 
-    settings, 
-    theme, 
-    onThemeChange, 
-    fontFamily, 
-    setFontFamily, 
-    fontScale, 
-    setFontScale, 
-    buttonTextColor, 
-    setButtonTextColor, 
-    onOpenSupport, 
-    onShowAbout, 
-    onCheckForUpdates, 
-    isOrientationLocked,
-    setIsOrientationLocked
-}) => {
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, settings, theme, onThemeChange, fontFamily, setFontFamily, fontScale, setFontScale, buttonTextColor, setButtonTextColor, onOpenSupport, onShowAbout, onCheckForUpdates }) => {
   const { vibrationEnabled, setVibrationEnabled, soundEnabled, setSoundEnabled, taxSettings, setTaxSettings, maxHistory, setMaxHistory } = settings;
   
   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -123,11 +103,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <input type="checkbox" name="showTaxPerNumber" checked={taxSettings.showTaxPerNumber} onChange={handleTaxChange} disabled={!taxSettings.isEnabled} className="ml-3 w-5 h-5 accent-[var(--accent-color)]" />
                 عرض الضريبة فوق كل رقم
             </label>
-            {/* [MODIFIED] تعديل تسمية القسمة على .93 */}
             <select name="mode" value={taxSettings.mode} onChange={handleTaxChange} className="w-full p-2.5 rounded-xl border border-[var(--border-secondary)] bg-[var(--bg-inset)] text-[var(--text-primary)] mb-4 text-base">
               <option value="add-15">إضافة 15%</option>
               <option value="extract-custom">استخلاص نسبة مخصصة</option>
-              <option value="divide-93">القسمة على ٠.٩٣</option> 
+              <option value="divide-93">القسمة على 0.93</option>
               <option value="custom">إضافة نسبة مخصصة</option>
             </select>
             {['custom', 'extract-custom'].includes(taxSettings.mode) && (
@@ -162,14 +141,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <span>تفعيل الاهتزاز عند الضغط</span>
           <input type="checkbox" checked={vibrationEnabled} onChange={(e) => setVibrationEnabled(e.target.checked)} className="w-5 h-5 accent-[var(--accent-color)]" />
         </label>
-        <label className="flex items-center justify-between text-[var(--text-secondary)] mb-4">
+        <label className="flex items-center justify-between text-[var(--text-secondary)]">
           <span>تفعيل المؤثرات الصوتية</span>
           <input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} className="w-5 h-5 accent-[var(--accent-color)]" />
-        </label>
-        {/* [NEW] مفتاح قفل دوران الشاشة */}
-        <label className="flex items-center justify-between text-[var(--text-secondary)]">
-          <span>تثبيت اتجاه الشاشة (عمودي)</span>
-          <input type="checkbox" checked={isOrientationLocked} onChange={(e) => setIsOrientationLocked(e.target.checked)} className="w-5 h-5 accent-[var(--accent-color)]" />
         </label>
       </div>
       <hr className="border-[var(--border-secondary)] my-4" />
