@@ -1,0 +1,6 @@
+# robots.txt for Abo Suhail Calc
+
+User-agent: *
+Allow: /
+
+Sitemap: https://abo-suhail2.vercel.app/sitemap.xml
