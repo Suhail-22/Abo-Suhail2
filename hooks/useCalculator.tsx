@@ -1,4 +1,4 @@
-Import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { parseExpression, preprocessExpression } from '../services/calculationEngine';
 import { getLocalFix, findErrorDetails } from '../services/localErrorFixer';
@@ -34,20 +34,6 @@ export const useCalculator = ({ showNotification }: UseCalculatorProps) => {
   const [error, setError] = useState<ErrorState | null>(null);
   const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
   const [lastExpression, setLastExpression] = useState<string | null>(null);
-
-  // حساب عدد العمليات التي تمت في اليوم الحالي فقط - لتظهر كإشعار في الواجهة (طلب المستخدم)
-  const todayHistoryCount = useMemo(() => {
-    const today = new Date().toDateString();
-    return history.filter(item => {
-        // يتم تجميع التاريخ والوقت في سلسلة نصية ثم إنشاء كائن Date للمقارنة
-        try {
-            return new Date(item.date + ' ' + item.time).toDateString() === today;
-        } catch (e) {
-            // معالجة الأخطاء إذا كان تنسيق التاريخ غير صالح
-            return false;
-        }
-    }).length;
-  }, [history]);
 
   const entryCount = useMemo(() => {
       if (calculationExecuted) return 1;
@@ -313,15 +299,7 @@ export const useCalculator = ({ showNotification }: UseCalculatorProps) => {
       }
 
       const taxResult = taxResultValue ? taxResultValue.toLocaleString('en-US', {maximumFractionDigits: 10, useGrouping: false}) : null;
-      
-      // تعديل تسمية الضريبة لوضع القسمة على 0.93 ليظهر كـ "/.93" (طلب المستخدم)
-      let taxLabel = 'الإجمالي مع الضريبة';
-      if (taxSettings.mode === 'extract-custom') {
-        taxLabel = 'الأصل بدون ضريبة';
-      } else if (taxSettings.mode === 'divide-93') {
-        taxLabel = '/.93'; // التسمية الجديدة لتكون قصيرة
-      }
-
+      const taxLabel = taxSettings.mode === 'extract-custom' ? 'الأصل بدون ضريبة' : 'الإجمالي مع الضريبة';
       const now = new Date();
       
       const newItem: HistoryItem = {
@@ -411,8 +389,6 @@ export const useCalculator = ({ showNotification }: UseCalculatorProps) => {
 
   return {
     input, history, error, aiSuggestion, isCalculationExecuted: calculationExecuted, entryCount, lastExpression,
-    // إضافة todayHistoryCount إلى الكائن المرتجع
-    todayHistoryCount,
     settings: {
       vibrationEnabled, setVibrationEnabled,
       soundEnabled, setSoundEnabled,
